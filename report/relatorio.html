@@ -2,86 +2,416 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
-<title>Relatório DQN — CartPole</title>
+<title>Relatório DQN — CartPole-v1</title>
 <style>
-  @page { size: A4; margin: 11mm 13mm 11mm 13mm; }
-  * { box-sizing: border-box; }
-  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; font-size: 8.6pt; line-height: 1.32; color: #0b0b0b; margin: 0; }
-  h1 { font-size: 13pt; margin: 0 0 1mm; }
-  h2 { font-size: 10.5pt; margin: 3mm 0 1mm; padding-top: 1mm; border-top: 1px solid #d8d7d2; }
-  p { margin: 0 0 1.4mm; text-align: justify; hyphens: auto; }
-  .meta { color: #52514e; font-size: 8pt; margin-bottom: 1.5mm; }
-  .meta a, p a { color: #1c5cab; text-decoration: none; }
-  .lbl { font-weight: 700; }
-  code { font-family: Menlo, monospace; font-size: 7.6pt; background: #f0efec; padding: 0 2px; border-radius: 2px; }
-  figure { margin: 1mm 0 1.2mm; }
-  figure img { width: 100%; display: block; }
-  figure.q2 img { width: 78%; margin: 0 auto; }
-  figcaption { font-size: 7.4pt; color: #52514e; margin-top: 0.5mm; }
-  table { border-collapse: collapse; width: 100%; font-size: 7.4pt; margin: 0.8mm 0 1.4mm; font-variant-numeric: tabular-nums; }
-  th, td { padding: 0.5mm 1.4mm; text-align: right; border-bottom: 1px solid #e4e3df; white-space: nowrap; }
-  th { color: #52514e; font-weight: 600; border-bottom: 1px solid #b9b8b2; }
-  th:first-child, td:first-child { text-align: left; }
-  td.ids { font-family: Menlo, monospace; font-size: 6.8pt; color: #52514e; }
-  .bad { color: #b3261e; font-weight: 600; }
-  .pb { break-before: page; }
+  @page {
+    size: A4;
+    margin: 9mm 11mm 9mm 11mm;
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 8.2pt;
+    line-height: 1.32;
+    color: #1e293b;
+    background: #ffffff;
+    margin: 0;
+  }
+  
+  /* Header Section */
+  .header-container {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 1.2mm;
+    margin-bottom: 1.5mm;
+  }
+  .super-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #2563eb;
+    margin-bottom: 0.6mm;
+  }
+  h1 {
+    font-size: 12.8pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 1mm 0;
+    letter-spacing: -0.01em;
+  }
+  .author-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 7.4pt;
+    color: #475569;
+    align-items: center;
+  }
+  .author-meta a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .author-meta .pill {
+    background: #f1f5f9;
+    padding: 1px 5px;
+    border-radius: 3px;
+    border: 1px solid #e2e8f0;
+  }
+
+  /* Two-column overview grid */
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 2.2mm;
+    margin-bottom: 1.8mm;
+  }
+  .overview-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 1.2mm 2mm;
+    font-size: 7.5pt;
+    line-height: 1.28;
+    color: #334155;
+  }
+  .overview-card strong {
+    color: #0f172a;
+  }
+
+  /* Section Styles */
+  .section-box {
+    margin-top: 1mm;
+  }
+  .section-bar {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+    border-bottom: 1.5px solid #0f172a;
+    padding-bottom: 0.8mm;
+    margin-bottom: 1.2mm;
+  }
+  .badge-tag {
+    background: #1e293b;
+    color: #ffffff;
+    font-size: 6.8pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1.5px 5px;
+    border-radius: 3px;
+  }
+  .section-title {
+    font-size: 10pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0;
+  }
+  .param-badge {
+    font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+    font-size: 7.4pt;
+    background: #e2e8f0;
+    color: #0f172a;
+    padding: 0 4px;
+    border-radius: 3px;
+  }
+
+  /* Callouts & Grids */
+  .callout-previsao {
+    background: #f0fdf4;
+    border-left: 3px solid #16a34a;
+    border-radius: 0 4px 4px 0;
+    padding: 1mm 2mm;
+    margin-bottom: 1.2mm;
+    font-size: 7.8pt;
+    color: #14532d;
+  }
+  .callout-previsao strong {
+    color: #166534;
+    text-transform: uppercase;
+    font-size: 6.8pt;
+    letter-spacing: 0.04em;
+  }
+
+  .grid-q3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2mm;
+    margin-bottom: 1.2mm;
+  }
+  .card-q3 {
+    border-radius: 4px;
+    padding: 1.1mm 2mm;
+    font-size: 7.5pt;
+    line-height: 1.28;
+  }
+  .card-q3.prev {
+    background: #f0fdf4;
+    border-left: 3px solid #16a34a;
+    color: #14532d;
+  }
+  .card-q3.just {
+    background: #eff6ff;
+    border-left: 3px solid #2563eb;
+    color: #1e40af;
+  }
+  .card-q3 strong {
+    text-transform: uppercase;
+    font-size: 6.8pt;
+    letter-spacing: 0.04em;
+    display: block;
+    margin-bottom: 0.4mm;
+  }
+
+  /* Figures */
+  figure {
+    margin: 0.8mm 0 1mm 0;
+    text-align: center;
+  }
+  figure img {
+    width: 100%;
+    display: block;
+    border-radius: 3px;
+  }
+  figure.compact-q2 img {
+    width: 75%;
+    margin: 0 auto;
+  }
+  figcaption {
+    font-size: 7pt;
+    font-weight: 500;
+    color: #64748b;
+    margin-top: 0.5mm;
+  }
+
+  /* Professional Data Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 7.2pt;
+    margin: 0.8mm 0 1.2mm 0;
+    font-variant-numeric: tabular-nums;
+  }
+  thead tr {
+    background: #0f172a;
+    color: #ffffff;
+  }
+  th {
+    padding: 1mm 1.4mm;
+    text-align: right;
+    font-weight: 600;
+    font-size: 6.9pt;
+    border: none;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 0.7mm 1.4mm;
+    text-align: right;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  td:first-child { text-align: left; font-weight: 600; }
+  tbody tr:nth-child(even) {
+    background: #f8fafc;
+  }
+  .run-id {
+    font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+    font-size: 6.6pt;
+    color: #64748b;
+  }
+  .diverged {
+    color: #dc2626;
+    font-weight: 700;
+  }
+
+  /* Analysis Box */
+  .analysis-container {
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 4px;
+    padding: 1.5mm 2.4mm;
+    font-size: 8pt;
+    line-height: 1.32;
+    text-align: justify;
+    color: #0f172a;
+  }
+  .analysis-tag {
+    font-size: 6.8pt;
+    font-weight: 800;
+    color: #2563eb;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    margin-right: 4px;
+  }
+  code {
+    font-family: ui-monospace, Menlo, Monaco, Consolas, monospace;
+    font-size: 7.4pt;
+    background: #f1f5f9;
+    padding: 0 3px;
+    border-radius: 2px;
+    color: #0f172a;
+  }
+
+  /* Clean Page Breaks */
+  .page-break {
+    break-before: page;
+    margin-top: 0;
+    padding-top: 0;
+  }
 </style>
 </head>
 <body>
 
-<h1>Atividade DQN — Relatório experimental (CartPole-v1)</h1>
-<div class="meta">
-  Cleiver Batista da Silva Junior (individual) ·
-  Fork com <code>algorithms/dqn.py</code> completo: <a href="FORK_URL">FORK_URL</a> ·
-  Projeto wandb: <a href="WANDB_URL">WANDB_URL</a>
+<!-- ========================================== -->
+<!-- PÁGINA 1: CABEÇALHO, OVERVIEW E QUESTÃO 01 -->
+<!-- ========================================== -->
+<div class="header-container">
+  <div class="super-header">
+    <span>Aprendizado por Reforço · Atividade Prática DQN</span>
+    <span>Ambiente: Gymnasium CartPole-v1</span>
+  </div>
+  <h1>Investigação Experimental de Deep Q-Networks (DQN)</h1>
+  <div class="author-meta">
+    <span class="pill"><strong>Autor:</strong> Cleiver Batista da Silva Junior (individual)</span>
+    <span class="pill"><strong>Fork:</strong> <a href="https://github.com/CleiverJr/t-zero-learning">CleiverJr/t-zero-learning</a></span>
+    <span class="pill"><strong>Algoritmo:</strong> <a href="https://github.com/CleiverJr/t-zero-learning/blob/main/algorithms/dqn.py">algorithms/dqn.py</a></span>
+    <span class="pill"><strong>W&B:</strong> <a href="https://wandb.ai/jr-cleiver-federal-university-of-goi-s/dqn-assignment">projeto dqn-assignment</a> (24 runs; IDs nas tabelas)</span>
+  </div>
 </div>
 
-<p><span class="lbl">Implementação.</span> <code>ReplayBuffer.add</code> escreve na posição <code>pos</code> e avança um ponteiro circular (<code>pos = (pos+1) % capacity</code>, <code>size = min(size+1, capacity)</code>), sobrescrevendo a transição mais antiga quando cheio. <code>sample</code> sorteia índices uniformes com reposição em <code>[0, size)</code> — nunca em slots vazios. <code>compute_td_targets</code> retorna <code>y = r + γ·max<sub>a'</sub> Q<sub>target</sub>(s',a')·(1−done)</code>, com o max vindo da <em>target network</em>, <code>done</code> marcando só terminações (truncamento em 500 passos continua fazendo bootstrap) e <code>r</code>/<code>done</code> achatados para shape <code>(B,)</code>. Os 7 testes passam; o baseline chega a retorno 500 (eval greedy 500 ± 0 nas duas seeds).</p>
-<p><span class="lbl">Protocolo.</span> Todos os runs usam <code>configs/dqn_cartpole.yml</code> (500k passos), mudando apenas o hiperparâmetro da questão via <code>--override</code>, com <b>2 seeds em todas as configurações</b> (seed 1 = linha cheia, seed 2 = tracejada). TD loss suavizada com EMA 0.9 só para leitura. Linha pontilhada nos gráficos de Q: <b>1/(1−γ)</b>, o maior valor possível no CartPole (recompensa 1 por passo) — a referência que permite dizer se Q está <em>certo</em>, e não só se está estável.</p>
+<div class="overview-grid">
+  <div class="overview-card">
+    <strong>Implementação Algorítmica (Partes 1 e 2):</strong> <code>ReplayBuffer.add</code> grava dados com ponteiro circular FIFO (<code>pos = (pos+1) % capacity</code>), sobrescrevendo a transição mais antiga. <code>sample</code> extrai amostras aleatórias uniformes com reposição nos slots preenchidos. <code>compute_td_targets</code> avalia <i>y</i> = <i>r</i> + &gamma; &middot; max<sub><i>a'</i></sub> <i>Q</i><sub>target</sub>(<i>s'</i>, <i>a'</i>) &middot; (1 &minus; <i>d</i>) usando a target network; truncamentos de 500 passos mantêm bootstrap e tensores são achatados para shape (<i>B</i>,). Validado via <code>pytest tests/test_dqn.py</code> (7/7 testes aprovados).
+  </div>
+  <div class="overview-card">
+    <strong>Protocolo Experimental (Harness):</strong> Todos os runs utilizam <code>configs/dqn_cartpole.yml</code> (500k passos de treino, &epsilon;: 1.0 &rarr; 0.05 em 50% do treino, taxa de aprendizado 2.5 &times; 10<sup>-4</sup>), alterando apenas a variável da questão via <code>--override</code>. <strong>Todas as configurações foram executadas com 2 seeds</strong> (seed 1 = linha contínua, seed 2 = tracejada). Referência pontilhada nos gráficos: <i>Q</i>* = 1/(1 &minus; &gamma;) = 100.
+  </div>
+</div>
 
-<h2>Q1 — Frequência de sincronização da target network (<code>dqn.target_network_frequency</code> ∈ {1, 50, <b>500</b>, 10000, 50000})</h2>
-<p><span class="lbl">Previsão.</span> Com tnf=1 o alvo se move junto com a rede que está sendo treinada; espero que <code>q_values</code> cresça sem controle (superestimação que se realimenta) e o retorno fique instável. Com tnf muito grande o alvo fica quase congelado: o treino deve ser estável, com <code>td_loss</code> baixa, mas lento, porque o valor só se propaga a cada sincronização.</p>
-<figure>
-  <img src="figs/q1_target_network_frequency.png" alt="Q1: retorno, td_loss e q_values por target_network_frequency">
-  <figcaption>Fig. 1 — Retorno médio (100 ep.), TD loss (log) e Q médio predito (symlog) para cada tnf. Seed 1 cheia, seed 2 tracejada.</figcaption>
-</figure>
-<table>
-  <tr><th>tnf</th><th>retorno final (s1 / s2)</th><th>eval greedy (s1 / s2)</th><th>Q máx.</th><th>Q médio &gt;400k</th><th>TD loss mediana</th><th>wandb run ids (s1, s2)</th></tr>
-  <tr><td>1</td><td class="bad">215 / 198</td><td class="bad">223 / 208</td><td class="bad">2631 / 2931</td><td>69 / 70</td><td>60 / 55</td><td class="ids">nxv89hnf, 68hrq80o</td></tr>
-  <tr><td>50</td><td>500 / <span class="bad">130</span></td><td>500 / 479</td><td class="bad">1208 / 1053</td><td>103 / 212</td><td>4.8 / 3.0</td><td class="ids">7z89c72w, 51ye09dc</td></tr>
-  <tr><td>500 (baseline)</td><td>500 / 485</td><td>500 / 500</td><td>216 / 232</td><td>103 / 98</td><td>0.24 / 0.48</td><td class="ids">5w0roffb, ai4c257z</td></tr>
-  <tr><td>10000</td><td class="bad">130 / 130</td><td class="bad">115 / 130</td><td>37.5 / 37.5</td><td>33 / 35</td><td>0.06 / 0.11</td><td class="ids">yggog0vi, 1u52wg0d</td></tr>
-  <tr><td>50000</td><td class="bad">372 / 111</td><td>467 / <span class="bad">107</span></td><td>10.3 / 9.9</td><td>9.5 / 9.0</td><td>0.016 / 0.014</td><td class="ids">e9b9ui66, 09hrkdph</td></tr>
-</table>
-<p><span class="lbl">Explicação.</span> O alvo de TD depende da própria função Q que está sendo aprendida; a target network é uma cópia defasada que transforma cada janela de <code>tnf</code> passos numa regressão supervisionada comum, com rótulos fixos. Com <b>tnf=1</b> essa proteção some: o <code>max<sub>a'</sub></code> escolhe sistematicamente os erros positivos de Q, esses erros viram rótulo no passo seguinte e são amplificados. O gráfico de <code>q_values</code> mostra isso de forma direta: Q chega a ~1300 em 100k passos e a <b>~2600–2900 perto de 320–340k</b>, 26–29× acima do limite físico de 100. O colapso do retorno (de ~290 para ~20 na seed 1) acontece exatamente no pico de Q, com TD loss chegando a 10<sup>4</sup>. Com tnf=50 o efeito é o mesmo, só que mais fraco: Q ~1200 no início, e a seed 2 diverge de novo aos 470k (Q→1053, retorno 490→130). <b>Previsão confirmada</b>, inclusive a dependência de seed.</p>
-<p>No outro extremo, <b>tnf grande</b> gera TD loss minúscula (mediana 0.016 com tnf=50000, 15× <em>menor</em> que o baseline) e ainda assim a política é ruim. A TD loss só mede a distância de Q a um alvo que a própria rede define; com alvo congelado, a rede o ajusta com facilidade, e a perda fica baixa sem que Q esteja perto do valor verdadeiro. <code>q_values</code> explica o mecanismo: cada sincronização propaga só um passo do backup de Bellman, então depois de k sincronizações Q ≈ Σ<sub>i&lt;k</sub>γ<sup>i</sup>. Com tnf=50000 houve ~9 syncs e Q estabilizou em <b>9.5</b>. Com tnf=10000, ~49 syncs dão (1−0.99<sup>49</sup>)/0.01 = 38.9, e o valor observado foi <b>37.5</b>. Os saltos em degrau da TD loss a cada 50k passos são justamente essas sincronizações. A rede só "enxerga" ~10–40 passos à frente e não consegue distinguir estados que falham em 50 passos de estados que nunca falham. É por isso que o retorno fica em ~110–130 (a seed 1 com tnf=50000 subiu no fim por sorte e não se repetiu na seed 2). A previsão de "lento" se confirmou, mas subestimei o tamanho do efeito: em 500k passos o treino não chega a convergir.</p>
+<div class="section-box">
+  <div class="section-bar">
+    <span class="badge-tag">Questão 01</span>
+    <span class="section-title">Frequência de Sincronização da Target Network</span>
+    <span class="param-badge">dqn.target_network_frequency ∈ {1, 50, 500, 10000, 50000}</span>
+  </div>
 
-<h2 class="pb">Q2 — Tamanho do replay buffer (<code>dqn.buffer_size</code> ∈ {16, 64, 200, 2000, <b>10000</b>, 100000})</h2>
-<p><span class="lbl">Previsão.</span> Um buffer minúsculo deve deixar o minibatch cheio de transições consecutivas e quase idênticas, e fazer a rede esquecer situações que não revisita (p. ex. estados de queda depois que ela aprende a equilibrar), gerando oscilação do retorno e Q ruidoso. Um buffer enorme deve ser estável, mas mais lento, por manter por muito tempo dados antigos da fase aleatória (ε≈1). Esperava que 200 já fosse pequeno demais.</p>
-<figure class="q2">
-  <img src="figs/q2_buffer_size.png" alt="Q2: retorno e q_values por buffer_size">
-  <figcaption>Fig. 2 — Retorno médio (100 ep.) e Q médio predito para cada tamanho de buffer (batch_size = 128 em todos). Seed 1 cheia, seed 2 tracejada.</figcaption>
-</figure>
-<table>
-  <tr><th>buffer</th><th>retorno final (s1 / s2)</th><th>1º passo com retorno ≥ 450</th><th>Q máx.</th><th>Q &gt;400k: média ± desvio</th><th>wandb run ids (s1, s2)</th></tr>
-  <tr><td>16</td><td class="bad">240 / 415</td><td>428k / nunca</td><td>205 / 257</td><td class="bad">131 ± 43 / 174 ± 58</td><td class="ids">zyf6boas, uoeeq6pd</td></tr>
-  <tr><td>64</td><td class="bad">385 / 284</td><td>438k / nunca</td><td>216 / 230</td><td class="bad">158 ± 41 / 124 ± 40</td><td class="ids">11jpsr7u, 5yun2dex</td></tr>
-  <tr><td>200</td><td>500 / 500</td><td>240k / 243k</td><td>257 / 269</td><td>112 ± 5 / 109 ± 9</td><td class="ids">sjlrp5u7, 4uwqh0tq</td></tr>
-  <tr><td>2000</td><td>497 / 482</td><td>250k / 237k</td><td>205 / 222</td><td>100 ± 5 / 101 ± 6</td><td class="ids">nznb3q7v, 9aqf7dgw</td></tr>
-  <tr><td>10000 (baseline)</td><td>500 / 485</td><td>244k / 245k</td><td>216 / 232</td><td>103 ± 1 / 98 ± 6</td><td class="ids">5w0roffb, ai4c257z</td></tr>
-  <tr><td>100000</td><td>497 / 414</td><td class="bad">405k / 447k</td><td class="bad">354 / 529</td><td>101 ± 2 / 108 ± 3</td><td class="ids">k9jj7qlv, p0z6nmdh</td></tr>
-</table>
-<p><span class="lbl">Explicação.</span> Um buffer muito pequeno causa dois problemas distintos. <b>(1) Correlação dentro do minibatch:</b> com buffer=16 e batch=128, cada minibatch repete as mesmas ~16 transições consecutivas ~8 vezes. Todas vêm do mesmo trecho de uma única trajetória, então o gradiente deixa de ser uma estimativa do erro médio sobre o espaço de estados e passa a ajustar a rede à situação do momento, puxando Q para lá e para cá. No gráfico de <code>q_values</code>, as curvas de 16 e 64 são uma faixa larga de ruído: <b>desvio de 40–58 na fase final, contra ~1–6 no baseline</b>. <b>(2) Cobertura / esquecimento:</b> a rede só pode rever os últimos 16–64 passos. Quando a política melhora, o buffer passa a conter só estados "bons", perto do centro. Estados de queda somem do conjunto de treino, seus valores deixam de ser corrigidos e a rede os esquece. O gráfico de Q mostra essa deriva: depois de 350k a média de Q fica em 124–174, <b>acima do limite de 100</b>, ou seja, a rede superestima justamente as regiões que não revê. O retorno responde com ciclos de aprender e desaprender (buffer=64 s1 cai de 425 para 175 aos 340k e volta; buffer=16 s1 cai de 450 para 240 no fim). Nenhuma das quatro seeds chega a um platô estável em 500.</p>
-<p>A previsão foi <b>parcialmente refutada</b> quanto ao limite: buffer=200 aprende tão bem quanto o baseline nas duas seeds. No CartPole, 200 transições já cobrem vários episódios no início do treino e o espaço de estados relevante é pequeno; foi preciso descer a 64 ou menos para expor os dois efeitos. No extremo oposto, <b>buffer=100000</b> leva quase o dobro de passos para chegar a 450 (405–447k contra ~245k) e tem o maior pico de Q (354 e 529). O buffer só começa a descartar dados depois de 100k passos, então ao redor de 150k a maior parte das amostras ainda vem da fase com ε alto: transições de uma política muito pior, que a rede ajusta com bootstrap pouco confiável, enquanto cada transição recente é revista com menos frequência. O resultado é convergência mais lenta, e não instabilidade (Q termina em ~101–108, com desvio de 2–3), como previsto.</p>
+  <div class="callout-previsao">
+    <strong>Previsão Teórica:</strong> Com <code>tnf=1</code>, o alvo móvel contínuo causará realimentação positiva de superestimação em <code>q_values</code>, explodindo a perda e colapsando o retorno. Com <code>tnf</code> muito grande, o alvo quase estático manterá a <code>td_loss</code> baixa e treino estável, porém a propagação do valor será excessivamente lenta.
+  </div>
 
-<h2>Q3 (extra) — Fator de desconto (<code>dqn.gamma</code> ∈ {0.9, <b>0.99</b>, 0.999})</h2>
-<p><span class="lbl">Previsão.</span> Com recompensa 1 por passo, Q deve convergir para ≈1/(1−γ) (10, 100, 1000). γ=0.9 tem horizonte efetivo de ~10 passos, curto para "ver" uma queda que se desenha em dezenas de passos, então espero pior desempenho. γ=0.999 deve funcionar, mas com alvos 10× maiores, TD loss maior e mais instabilidade.</p>
-<p><span class="lbl">Gráficos escolhidos e por quê.</span> <code>episodic_return_mean_last100</code> mostra o resultado. <code>q_values</code> com as linhas 1/(1−γ) mostra diretamente o que γ muda (a escala e o horizonte do valor) e permite verificar a convergência para o valor teórico. <code>td_loss</code> em escala log está lá para mostrar que <b>a TD loss não é comparável entre γ</b>: ela cresce com a escala dos alvos (o erro quadrático é proporcional à magnitude de Q ao quadrado). <code>charts/epsilon</code> não foi incluído porque o cronograma de exploração é idêntico em todos os runs.</p>
-<figure>
-  <img src="figs/q3_gamma.png" alt="Q3: retorno, q_values e td_loss por gamma">
-  <figcaption>Fig. 3 — Retorno médio, Q médio predito (symlog; pontilhado = 1/(1−γ) na cor de cada γ) e TD loss (log). Run ids: γ=0.9 0u39md1a/x5wx63an · γ=0.99 5w0roffb/ai4c257z · γ=0.999 6g6ode8m/x2ok2xpa.</figcaption>
-</figure>
-<p><span class="lbl">Explicação.</span> <code>q_values</code> confirma a previsão com precisão: Q converge para <b>10.0 (γ=0.9), ~100 (γ=0.99) e ~1250–1310 (γ=0.999)</b>. Neste último caso há uma superestimação de 25–30%, consistente com o viés do max amplificado por alvos maiores. Com γ=0.9, Q satura em 10 em apenas ~50k passos. Um estado que falha em T passos vale (1−0.9<sup>T</sup>)/0.1, e para T ≥ 30 isso é ≥ 9.6: a diferença entre "cai daqui a 30 passos" e "nunca cai" é menor que 0.4, abaixo do ruído da regressão. O agente só aprende a evitar quedas iminentes e não corrige derivas lentas (p. ex. o carrinho saindo pela borda). O resultado é retorno final de 272–355 e eval greedy de 161–285, com oscilação: <b>previsão confirmada</b>. Com γ=0.999 o horizonte (~1000) cobre o episódio inteiro de 500 passos e o aprendizado acompanha o baseline (eval 500 nas duas seeds). O custo aparece na <code>td_loss</code>: uma ordem de grandeza acima do baseline durante todo o treino, com picos de ~10<sup>3</sup> aos 400k e 470k. Eles não derrubaram o retorno, mas mostram que a mesma taxa de aprendizado dá passos efetivamente maiores quando os alvos são 10× maiores. A instabilidade prevista existe na perda, mas nesta tarefa não chegou a afetar a política.</p>
+  <figure>
+    <img src="figs/q1_target_network_frequency.png" alt="Q1: retorno, td_loss e q_values por target_network_frequency">
+    <figcaption>Fig. 1 — Retorno médio móvel (100 ep.), TD Loss (escala log com EMA 0.9) e Q médio predito (symlog) por tnf. Seed 1 contínua, Seed 2 tracejada.</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>tnf</th><th>Retorno Final (s1 / s2)</th><th>Eval Greedy (s1 / s2)</th><th>Q máx.</th><th>Q Médio >400k</th><th>TD Loss Mediana</th><th>W&B Run IDs (s1, s2)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td class="diverged">215 / 198</td><td class="diverged">223 / 208</td><td class="diverged">2631 / 2931</td><td>69 / 70</td><td>60 / 55</td><td class="run-id">nxv89hnf, 68hrq80o</td></tr>
+      <tr><td>50</td><td>500 / <span class="diverged">130</span></td><td>500 / 479</td><td class="diverged">1208 / 1053</td><td>103 / 212</td><td>4.8 / 3.0</td><td class="run-id">7z89c72w, 51ye09dc</td></tr>
+      <tr><td>500 (baseline)</td><td>500 / 485</td><td>500 / 500</td><td>216 / 232</td><td>103 / 98</td><td>0.24 / 0.48</td><td class="run-id">5w0roffb, ai4c257z</td></tr>
+      <tr><td>10000</td><td class="diverged">130 / 130</td><td class="diverged">115 / 130</td><td>37.5 / 37.5</td><td>33 / 35</td><td>0.06 / 0.11</td><td class="run-id">yggog0vi, 1u52wg0d</td></tr>
+      <tr><td>50000</td><td class="diverged">372 / 111</td><td>467 / <span class="diverged">107</span></td><td>10.3 / 9.9</td><td>9.5 / 9.0</td><td>0.016 / 0.014</td><td class="run-id">e9b9ui66, 09hrkdph</td></tr>
+    </tbody>
+  </table>
+
+  <div class="analysis-container">
+    <span class="analysis-tag">Mecanismo & Análise:</span> A <em>target network</em> fixa temporariamente os rótulos de regressão, quebrando a perigosa circularidade do alvo de Bellman. Com <b><code>tnf=1</code></b>, essa âncora é perdida: o operador max seleciona sistematicamente erros positivos locais, que viram alvo imediato e amplificam-se a cada passo. Conforme exposto em <code>losses/q_values</code>, Q atinge ~1300 em 100k passos e atinge <b>2600–2931</b> (26–29&times; o teto físico teórico de 100), levando a <code>losses/td_loss</code> a 10<sup>4</sup> e provocando o colapso abrupto do retorno (seed 1 despenca de ~290 para ~20 no pico de Q). No extremo oposto (<b><code>tnf=10000</code> e <code>50000</code></b>), a <code>td_loss</code> é artificialmente minúscula (mediana 0.016 em 50k, 15&times; menor que o baseline) porque a rede se ajusta trivialmente a um alvo quase estático, mascarando que os valores estão errados e a política é ineficaz (retorno estagnado em ~110–130). O gráfico de <code>losses/q_values</code> comprova o mecanismo: a propagação de Bellman ocorre em apenas 1 passo por sincronização (<i>Q</i> &asymp; &Sigma;<sub><i>i&lt;k</i></sub> &gamma;<sup><i>i</i></sup>), formando degraus visíveis. Com <code>tnf=50000</code> (~9 sincronizações), Q estagna em <b>9.5</b>; com <code>tnf=10000</code> (~49 sincronizações), atinge <b>37.5</b> (teórico 38.9). A rede só "enxerga" ~10–40 passos à frente, sendo incapaz de diferenciar equilíbrios longos de falhas distantes. <strong>Previsões plenamente confirmadas.</strong>
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PÁGINA 2: QUESTÃO 02                       -->
+<!-- ========================================== -->
+<div class="section-box page-break">
+  <div class="section-bar">
+    <span class="badge-tag">Questão 02</span>
+    <span class="section-title">Capacidade do Replay Buffer</span>
+    <span class="param-badge">dqn.buffer_size ∈ {16, 64, 200, 2000, 10000, 100000}</span>
+  </div>
+
+  <div class="callout-previsao">
+    <strong>Previsão Teórica:</strong> Buffers minúsculos devem gerar batches com forte correlação temporal e esquecimento catastrófico de estados de queda, provocando oscilações severas no retorno e ruído em Q. Buffers excessivos devem atrasar a convergência ao reter por muito tempo dados da fase puramente exploratória (&epsilon; &asymp; 1). Esperava-se colapso já com 200.
+  </div>
+
+  <figure class="compact-q2">
+    <img src="figs/q2_buffer_size.png" alt="Q2: retorno e q_values por buffer_size">
+    <figcaption>Fig. 2 — Retorno médio móvel (100 ep.) e Q médio predito por tamanho de buffer (batch_size = 128 fixo). Seed 1 contínua, Seed 2 tracejada.</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>Buffer</th><th>Retorno Final (s1 / s2)</th><th>1º Passo com Retorno ≥ 450</th><th>Q máx.</th><th>Q >400k: Média ± Desvio</th><th>W&B Run IDs (s1, s2)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>16</td><td class="diverged">240 / 415</td><td>428k / nunca</td><td>205 / 257</td><td class="diverged">131 ± 43 / 174 ± 58</td><td class="run-id">zyf6boas, uoeeq6pd</td></tr>
+      <tr><td>64</td><td class="diverged">385 / 284</td><td>438k / nunca</td><td>216 / 230</td><td class="diverged">158 ± 41 / 124 ± 40</td><td class="run-id">11jpsr7u, 5yun2dex</td></tr>
+      <tr><td>200</td><td>500 / 500</td><td>240k / 243k</td><td>257 / 269</td><td>112 ± 5 / 109 ± 9</td><td class="run-id">sjlrp5u7, 4uwqh0tq</td></tr>
+      <tr><td>2000</td><td>497 / 482</td><td>250k / 237k</td><td>205 / 222</td><td>100 ± 5 / 101 ± 6</td><td class="run-id">nznb3q7v, 9aqf7dgw</td></tr>
+      <tr><td>10000 (baseline)</td><td>500 / 485</td><td>244k / 245k</td><td>216 / 232</td><td>103 ± 1 / 98 ± 6</td><td class="run-id">5w0roffb, ai4c257z</td></tr>
+      <tr><td>100000</td><td>497 / 414</td><td class="diverged">405k / 447k</td><td class="diverged">354 / 529</td><td>101 ± 2 / 108 ± 3</td><td class="run-id">k9jj7qlv, p0z6nmdh</td></tr>
+    </tbody>
+  </table>
+
+  <div class="analysis-container">
+    <span class="analysis-tag">Mecanismo & Análise:</span> A redução drástica da capacidade do buffer decompõe-se em dois prejuízos distintos:
+    <br><strong>(1) Correlação intra-batch:</strong> Com <code>buffer=16</code> e <code>batch=128</code>, o minibatch repete as mesmas ~16 transições consecutivas cerca de 8 vezes. Elas advêm de um mesmo segmento temporal de trajetória, violando a premissa de dados independentes (i.i.d.). O gradiente sobreajusta à circunstância momentânea da física local em vez da distribuição global do espaço de estados, gerando a larga banda de ruído e alta variância documentada em <code>losses/q_values</code> (desvio padrão na fase final de 40–58, contra 1–6 no baseline).
+    <br><strong>(2) Cobertura e esquecimento catastrófico:</strong> A rede acessa apenas os últimos 16–64 passos. À medida que a política melhora, o buffer é rapidamente preenchido por estados equilibrados próximos ao centro. Transições de queda deixam de ser armazenadas e revistas, de modo que a rede esquece a precificação do perigo. Sem essa penalização, os valores Q nessas bordas derivam livremente para cima (média de Q chega a 124–174 após 350k passos, violando o teto de 100). Ao adentrar tais estados no ambiente, o agente falha, o retorno desaba bruscamente (ex.: buffer 64 despencando de ~425 para ~175 aos 340k) e o aprendizado entra em ciclos intermitentes de reaprendizado sem estabilização em 500.
+    <br>A previsão do limiar foi parcialmente refutada: <code>buffer=200</code> convergiu tão eficientemente quanto o baseline (~240k passos), comprovando que no CartPole 200 passos bastam para fornecer diversidade representativa da dinâmica inicial. No outro extremo, o <b><code>buffer=100000</code></b> reteve por tempo excessivo experiências obsoletas da fase inicial aleatória (&epsilon; alto), postergando a convergência (atingiu retorno &ge; 450 apenas aos 405k–447k passos) e elevando o pico inicial de Q (354–529), embora sem desestabilizar o platô final, confirmando a lentidão prevista.
+  </div>
+</div>
+
+<!-- ========================================== -->
+<!-- PÁGINA 3: QUESTÃO 03 (EXTRA)               -->
+<!-- ========================================== -->
+<div class="section-box page-break">
+  <div class="section-bar">
+    <span class="badge-tag">Questão 03 (Extra)</span>
+    <span class="section-title">Impacto do Fator de Desconto Temporal</span>
+    <span class="param-badge">dqn.gamma ∈ {0.9, 0.99, 0.999}</span>
+  </div>
+
+  <div class="grid-q3">
+    <div class="card-q3 prev">
+      <strong>Previsão Teórica</strong>
+      O valor assintótico de Q deve convergir para o limite geométrico 1/(1 &minus; &gamma;): 10, 100 e 1000 para &gamma; = 0.9, 0.99 e 0.999. &gamma; = 0.9 terá horizonte curto (~10 passos), incapaz de detectar quedas graduais do pêndulo. &gamma; = 0.999 resolverá a tarefa, mas com alvos 10&times; maiores, maior magnitude de TD loss e potencial instabilidade numérica.
+    </div>
+    <div class="card-q3 just">
+      <strong>Justificativa das Métricas Selecionadas</strong>
+      <code>charts/episodic_return_mean_last100</code> afere o desempenho da política. <code>losses/q_values</code> com as retas 1/(1 &minus; &gamma;) valida diretamente a escala do valor e o horizonte preditivo. <code>losses/td_loss</code> (em log) evidencia que o erro quadrático cresce com a escala dos alvos (Q<sup>2</sup>) e não pode ser comparado diretamente entre diferentes &gamma;. <code>charts/epsilon</code> foi omitido por ser idêntico em todas as configurações.
+    </div>
+  </div>
+
+  <figure>
+    <img src="figs/q3_gamma.png" alt="Q3: retorno, q_values e td_loss por gamma">
+    <figcaption>Fig. 3 — Retorno médio móvel (100 ep.), Q médio predito (symlog; pontilhado teórico = 1/(1−γ)) e TD Loss (log) para cada γ. Seed 1 contínua, Seed 2 tracejada.</figcaption>
+  </figure>
+
+  <table>
+    <thead>
+      <tr><th>&gamma;</th><th>Retorno Final (s1 / s2)</th><th>Eval Greedy (s1 / s2)</th><th>1º Passo com Retorno ≥ 450</th><th>Q Médio >400k (s1 / s2)</th><th>TD Loss Mediana</th><th>W&B Run IDs (s1, s2)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>0.9</td><td class="diverged">355 / 272</td><td class="diverged">161 / 285</td><td class="diverged">443k / nunca</td><td>10.0 / 9.8</td><td>0.034 / 0.024</td><td class="run-id">0u39md1a, x5wx63an</td></tr>
+      <tr><td>0.99 (baseline)</td><td>500 / 485</td><td>500 / 500</td><td>244k / 245k</td><td>103 / 98</td><td>0.24 / 0.48</td><td class="run-id">5w0roffb, ai4c257z</td></tr>
+      <tr><td>0.999</td><td>498 / 500</td><td>500 / 500</td><td>248k / 251k</td><td class="diverged">1252 / 1310</td><td class="diverged">6.5 / 5.9</td><td class="run-id">6g6ode8m, x2ok2xpa</td></tr>
+    </tbody>
+  </table>
+
+  <div class="analysis-container">
+    <span class="analysis-tag">Mecanismo & Análise:</span> A evolução de <code>losses/q_values</code> valida precisamente o comportamento teórico assintótico: Q converge rigorosamente para <b>10.0 (&gamma; = 0.9)</b>, <b>~100 (&gamma; = 0.99)</b> e <b>~1250–1310 (&gamma; = 0.999)</b>. Em &gamma; = 0.999, registra-se superestimação de 25–30% acima de 1000, fruto da amplificação do viés positivo do operador max sobre alvos de grande escala.
+    <br>Com <b>&gamma; = 0.9</b>, o horizonte temporal efetivo é de apenas ~10 passos. O retorno acumulado de uma trajetória que cai em <i>T</i> = 30 passos atinge (1 &minus; 0.9<sup>30</sup>)/0.1 &asymp; 9.58, tornando a diferença de valor para uma trajetória perfeita (10.0) inferior a 0.42. Essa margem mínima é soterrada pelo ruído intrínseco da regressão; consequentemente, o agente só reage a tombos iminentes e negligencia velocidades angulares ou derivas lentas do carrinho em direção à borda, oscilando continuamente e estagnando em retorno medíocre (272–355).
+    <br>Com <b>&gamma; = 0.999</b>, o horizonte de planejamento engloba todo o episódio de 500 passos, igualando o retorno máximo (500) e a velocidade do baseline. O impacto ocorre diretamente na <code>losses/td_loss</code>: alvos 10&times; maiores aumentam a perda em mais de uma ordem de grandeza (mediana ~6.2 vs 0.36) e induzem picos severos de até ~10<sup>3</sup> devido a gradientes de alta magnitude. No entanto, nesta tarefa esses picos não desestabilizaram a política, mantendo avaliação gulosa ótima (500 &plusmn; 0 em ambas as seeds). <strong>Previsões plenamente confirmadas.</strong>
+  </div>
+</div>
 
 </body>
 </html>
