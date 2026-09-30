@@ -1,0 +1,745 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atividade 06 — Policy Gradient com Actor-Critic Síncrono (A2C)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 5.5mm 9mm 6.5mm 9mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.6pt;
+    line-height: 1.26;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page Wrapper */
+  .page {
+    width: 100%;
+    height: 283mm;
+    max-height: 283mm;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Header & Metadata */
+  .doc-header {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
+  }
+  .doc-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1px;
+  }
+  .doc-category {
+    font-size: 6.6pt;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #4338ca;
+  }
+  .doc-status {
+    font-size: 6.6pt;
+    font-weight: 700;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 0.5px 5px;
+    border-radius: 8px;
+  }
+  h1 {
+    font-size: 12.2pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 2px 0;
+    line-height: 1.15;
+    letter-spacing: -0.2px;
+  }
+  .meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 7.1pt;
+    color: #475569;
+  }
+  .meta-author {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .meta-bar a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* Setup Box */
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1.14fr 0.86fr;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 3.5px 6px;
+    margin-bottom: 5px;
+  }
+  .setup-col h3 {
+    margin: 0 0 1.5px 0;
+    font-size: 6.9pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #334155;
+  }
+  .setup-col p {
+    margin: 0;
+    font-size: 7.05pt;
+    line-height: 1.25;
+    text-align: justify;
+    color: #334155;
+  }
+
+  /* Section Styles */
+  h2 {
+    font-size: 8.8pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 2px 0 1.5px 0;
+    padding-bottom: 1.2px;
+    border-bottom: 1.5px solid #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h2 .param-tag {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #475569;
+    font-family: ui-monospace, Menlo, monospace;
+    white-space: nowrap;
+  }
+
+  /* Prediction Callout */
+  .pred-card {
+    background: #f0fdf4;
+    border-left: 2.5px solid #16a34a;
+    border-radius: 0 3px 3px 0;
+    padding: 2px 6px;
+    margin: 2px 0 2.5px 0;
+  }
+  .pred-title {
+    font-size: 6.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #15803d;
+    display: block;
+    margin-bottom: 0.5px;
+  }
+  .pred-card p {
+    margin: 0;
+    font-size: 7.2pt;
+    line-height: 1.22;
+    color: #14532d;
+    text-align: justify;
+  }
+
+  /* Figures */
+  figure {
+    margin: 1.5px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    padding: 1px;
+  }
+  figure img {
+    width: 100%;
+    display: block;
+  }
+  figure.half-fig img {
+    width: 74%;
+    margin: 0 auto;
+  }
+  figcaption {
+    font-size: 6.4pt;
+    color: #64748b;
+    padding: 1.2px 4px;
+    line-height: 1.15;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+  figcaption strong { color: #334155; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.6pt;
+    margin: 1.5px 0 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    padding: 2px 3.5px;
+    border: 1px solid #cbd5e1;
+    text-align: right;
+    font-size: 6.5pt;
+    letter-spacing: 0.15px;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 1.8px 3.5px;
+    border: 1px solid #e2e8f0;
+    text-align: right;
+    white-space: nowrap;
+    color: #1e293b;
+  }
+  td:first-child { text-align: left; font-weight: 600; }
+  tr:nth-child(even) { background: #f8fafc; }
+  .tag-best {
+    color: #047857;
+    font-weight: 700;
+    background: #d1fae5;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-worst {
+    color: #b91c1c;
+    font-weight: 700;
+    background: #fee2e2;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-base {
+    color: #1d4ed8;
+    font-weight: 700;
+    background: #dbeafe;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  td.mono-ids {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.0pt;
+    color: #64748b;
+  }
+
+  /* Discussion Text */
+  .analysis-p {
+    font-size: 7.55pt;
+    line-height: 1.27;
+    text-align: justify;
+    margin: 0 0 2.5px 0;
+    color: #1e293b;
+    hyphens: auto;
+  }
+  .analysis-p strong { color: #0f172a; }
+  code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.9pt;
+    background: #f1f5f9;
+    padding: 0 2px;
+    border-radius: 2px;
+    color: #0f172a;
+  }
+  i { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+  /* Footer */
+  .page-footer {
+    margin-top: auto;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 6.4pt;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 1: Cabeçalho, Implementação, Protocolo e Questão Q1               -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-badge-row">
+      <span class="doc-category">Reinforcement Learning &middot; Aprendizado por Reforço Profundo</span>
+      <span class="doc-status">&#10003; 14/14 Unit Tests Passed (100%)</span>
+    </div>
+    <h1>Atividade 06: Policy Gradient com Actor-Critic Síncrono (A2C)</h1>
+    <div class="meta-bar">
+      <span class="meta-author">Cleiver Batista da Silva Junior (individual)</span>
+      <span>&bull;</span>
+      <span>Fork Oficial: <a href="https://github.com/CleiverJr/t-zero-learning">github.com/CleiverJr/t-zero-learning</a></span>
+      <span>&bull;</span>
+      <span>Logs W&amp;B: <a href="https://wandb.ai/jr-cleiver-federal-university-of-goi-s/a2c-assignment">projeto a2c-assignment</a></span>
+      <span>&bull;</span>
+      <span>Ambientes: CartPole-v1 &amp; LunarLander-v3</span>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <div class="setup-col">
+      <h3>Implementação Algorítmica (Partes 1, 2 e 3)</h3>
+      <p>
+        <strong>1. Retorno de n-passos com Bootstrap (<code>algorithms/a2c.py</code>):</strong> Acumulação retroativa de horizonte finito <i>R<sub>t</sub></i> = <i>r<sub>t</sub></i> + &gamma;(1 &minus; <i>d<sub>t</sub></i>)<i>R</i><sub><i>t</i>+1</sub>, inicializada no passo terminal por <i>R<sub>T</sub></i> = <i>V</i>(<i>s<sub>T</sub></i>). A máscara booleana (1 &minus; <i>d<sub>t</sub></i>) interrompe estritamente a propagação nos limites dos episódios de forma desacoplada entre os ambientes.<br>
+        <strong>2. Perda de Política e Isolamento de Gradientes:</strong> Perda <i>L</i><sub>&pi;</sub> = &minus;<sup>1</sup>&frasl;<sub><i>B</i></sub> &sum; log &pi;(<i>a<sub>i</sub></i>|<i>s<sub>i</sub></i>) <i>A<sub>i</sub></i>, onde o peso de vantagem <i>A<sub>i</sub></i> = (<i>R<sub>i</sub></i> &minus; <i>V</i>(<i>s<sub>i</sub></i>))<code>.detach()</code> é explicitamente desconectado do grafo computacional para impedir o vazamento espúrio de gradiente da política para o crítico.<br>
+        <strong>3. Arquitetura Ator-Crítico Categórica (<code>networks/discrete_actor_critic.py</code>):</strong> Rede neural MLP com cabeças separadas parametrizando &pi;(<i>a</i>|<i>s</i>) &sim; <code>Categorical(logits)</code> e função valor escalar <i>V</i>(<i>s</i>).
+      </p>
+    </div>
+    <div class="setup-col">
+      <h3>Protocolo &amp; Rigor Experimental</h3>
+      <p>
+        <strong>Configuração Base:</strong> <code>configs/a2c_cartpole.yml</code> (500k timesteps, 8 ambientes, <i>n</i>=5, lr=7&times;10<sup>&minus;4</sup>, &gamma;=0,99, <i>c<sub>v</sub></i>=0,5, <i>c<sub>e</sub></i>=0,01).<br>
+        <strong>Reprodutibilidade Estocástica:</strong> Varreduras por <code>--override</code> executadas obrigatoriamente com <strong>2 seeds independentes</strong> (Linha cheia = Seed 1; Tracejada = Seed 2).<br>
+        <strong>Métricas &amp; Isolamento:</strong> Retorno final reportado como a média dos últimos 20% do treinamento. A taxa de passos por segundo (SPS) foi <em>aferida em execução isolada dedicada</em> (200k passos sem concorrência de CPU) para eliminar distorções de contenção de hardware.
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <h2>
+      <span>Q1 &mdash; Atores em Paralelo: Descorrelação de Trajetórias e Eficiência Amostral</span>
+      <span class="param-tag">num_envs &isin; {1, 8, 32, 64} + Controle</span>
+    </h2>
+
+    <div class="pred-card">
+      <span class="pred-title">Hipótese Teórica (A Priori)</span>
+      <p>
+        Aumentar o número de atores simultâneos em métodos on-policy quebra a dependência sequencial temporal das transições, reduzindo drasticamente a variância do estimador do gradiente de política e suprimindo o ruído de <code>policy_loss</code>. O paralelismo vetorial deve escalar o SPS até o limite de núcleos físicos da CPU. Contudo, como o tamanho do lote de cada atualização é <i>B</i> = num_envs &times; num_steps, valores excessivamente altos de <code>num_envs</code> reduzirão a quantidade de passos de gradiente executados dentro do orçamento fixo de 500k transições, desacelerando o aprendizado.
+      </p>
+    </div>
+
+    <figure>
+      <img src="figs/q1_num_envs.png" alt="Q1: Retorno, policy loss e SPS">
+      <figcaption><strong>Figura 1:</strong> Curvas de aprendizado (retorno médio dos últimos 100 episódios), ruído bruto de <code>policy_loss</code> (escala symlog) e taxa SPS aferida em isolamento físico por configuração de paralelismo.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>num_envs</th>
+          <th>Lote (N&times;n)</th>
+          <th>Atualizações</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy (s1 / s2)</th>
+          <th>Desvio &sigma; (policy_loss)</th>
+          <th>Pico Negativo</th>
+          <th>SPS Isolado</th>
+          <th>Run IDs (s1, s2)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>5</td>
+          <td>100.000</td>
+          <td>351 / 315</td>
+          <td>462 / <span class="tag-worst">256</span></td>
+          <td class="tag-worst">4,5 / 7,8</td>
+          <td class="tag-worst">&minus;63 / &minus;104</td>
+          <td>4.056</td>
+          <td class="mono-ids">7zz8i4sv, tdw48yei</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td>8 (Baseline)</td>
+          <td>40</td>
+          <td>12.500</td>
+          <td><span class="tag-best">478 / 461</span></td>
+          <td>500 / 482</td>
+          <td>1,4 / 1,3</td>
+          <td>&minus;14 / &minus;10</td>
+          <td>22.683</td>
+          <td class="mono-ids">5vukxjqp, q77wk364</td>
+        </tr>
+        <tr>
+          <td>32</td>
+          <td>160</td>
+          <td>3.125</td>
+          <td>417 / 469</td>
+          <td>500 / 375</td>
+          <td>0,74 / 0,84</td>
+          <td>&minus;3,6 / &minus;5,0</td>
+          <td><span class="tag-best">47.593</span></td>
+          <td class="mono-ids">u1gors56, o1mbpzz8</td>
+        </tr>
+        <tr>
+          <td>64</td>
+          <td>320</td>
+          <td>1.562</td>
+          <td><span class="tag-worst">221 / 159</span></td>
+          <td><span class="tag-worst">267 / 167</span></td>
+          <td>0,57 / 0,46</td>
+          <td>&minus;1,8 / &minus;0,3</td>
+          <td>38.843</td>
+          <td class="mono-ids">jikj7s7y, enq07wm0</td>
+        </tr>
+        <tr>
+          <td>Controle: 1 env, n=40</td>
+          <td>40</td>
+          <td>12.500</td>
+          <td>386 / 405</td>
+          <td>454 / <span class="tag-worst">298</span></td>
+          <td class="tag-worst">11,2 / 9,7</td>
+          <td class="tag-worst">&minus;54 / &minus;72</td>
+          <td>&mdash;</td>
+          <td class="mono-ids">abqwmzce, vm06tqa6</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Mecanismo de Descorrelação On-Policy:</strong> Algoritmos de gradiente de política on-policy não utilizam memória de replay; portanto, as amostras coletadas por um ator isolado são fortemente correlacionadas no tempo, representando um recorte microscópico e enviesado da dinâmica local do episódio. Isso explica os picos destrutivos de <code>policy_loss</code> observados com <code>num_envs=1</code> (&minus;63 e &minus;104) e seu elevado desvio padrão (&sigma; &approx; 7,8). Ao paralelizar atores em sincronia, cada ambiente ocupa uma região independente do espaço de estados, de modo que a agregação síncrona aproxima o gradiente amostrado de sua esperança matemática assintótica <b>E</b>[&nabla;<sub>&theta;</sub> log &pi;<sub>&theta;</sub>(<i>a</i>|<i>s</i>) <i>A</i>(<i>s</i>,<i>a</i>)], estabilizando a perda em uma faixa suave (&sigma; &approx; 0,5 em 64 envs).
+    </p>
+    <p class="analysis-p">
+      <strong>Isolamento Categórico: Volume do Lote vs. Independência Amostral:</strong> Uma ambiguidade teórica clássica é se o ganho de desempenho provém do aumento do lote (<i>B</i> = <i>N</i> &times; <i>n</i>) ou da independência das amostras. O <strong>run de controle</strong> (1 ambiente com <i>n</i>=40) soluciona essa questão: ele replica com exatidão o lote de 40 transições e as 12.500 atualizações do baseline (8 &times; 5), mas exibe o maior ruído de toda a série experimental (&sigma; = 11,2) e estagnação no retorno (386–405 vs 461–478). Isso comprova que a virtude do A2C reside na <em>descorrelação estocástica dos múltiplos pontos de partida</em>, e não no mero volume bruto de dados. Em contrapartida, com 64 ambientes, a variância é mínima, mas o orçamento de 500k passos comporta apenas 1.562 atualizações, resultando em severo subajuste. O SPS atinge pico de 47.593 em 32 atores (aceleração de 11,7&times;), retraindo em 64 devido à sobrecarga de chaveamento de contexto no processador de 10 núcleos.
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental A2C</span>
+    <span>Página 1 de 3</span>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 2: Questões Q2 e Q3 Integrais                                    -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div>
+    <h2>
+      <span>Q2 &mdash; Horizonte de Retorno de n-Passos: Trade-off Viés-Variância no Crítico</span>
+      <span class="param-tag">a2c.num_steps &isin; {1, 5, 32, 128}</span>
+    </h2>
+
+    <div class="pred-card">
+      <span class="pred-title">Hipótese Teórica (A Priori)</span>
+      <p>
+        O horizonte <i>n</i> comanda o balanço clássico entre viés e variância. Em <i>n</i>=1, o alvo aproxima-se do bootstrap de 1 passo (<i>r</i> + &gamma;<i>V</i>), exibindo baixa variância mas viés máximo herdado dos erros do crítico. Em <i>n</i>=128, o alvo aproxima-se de Monte Carlo puro, livre de viés mas sujeito à dispersão cumulativa da trajetória, elevando a <code>value_loss</code>. Como a vantagem <i>A<sub>t</sub></i> = <i>R<sub>t</sub></i> &minus; <i>V</i>(<i>s<sub>t</sub></i>) acopla diretamente o crítico ao ator, falhas no crítico devem desestabilizar o aprendizado da política.
+      </p>
+    </div>
+
+    <figure>
+      <img src="figs/q2_num_steps.png" alt="Q2: Retorno, value loss e explained variance">
+      <figcaption><strong>Figura 2:</strong> Curvas de retorno médio, evolução da <code>value_loss</code> (escala log) e dinâmica da variância explicada (EV) sob diferentes horizontes de rollout <i>n</i>.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>num_steps</th>
+          <th>Lote</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy</th>
+          <th>Value Loss Mediana</th>
+          <th>EV Final (s1 / s2)</th>
+          <th>Média Pesos A</th>
+          <th>Desvio Pesos A</th>
+          <th>Run IDs (s1, s2)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>8</td>
+          <td>431 / 433</td>
+          <td><span class="tag-best">500 / 500</span></td>
+          <td>~0,00</td>
+          <td><span class="tag-worst">0,26 / 0,90</span></td>
+          <td>&minus;0,25 / &minus;0,12</td>
+          <td>0,70 / 0,36</td>
+          <td class="mono-ids">jj88rgp5, agglp2k7</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td>5 (Baseline)</td>
+          <td>40</td>
+          <td><span class="tag-best">478 / 461</span></td>
+          <td>500 / 482</td>
+          <td>~0,00</td>
+          <td>0,70 / 0,44</td>
+          <td>&minus;0,07 / &minus;0,71</td>
+          <td>0,39 / 2,39</td>
+          <td class="mono-ids">5vukxjqp, q77wk364</td>
+        </tr>
+        <tr>
+          <td>32</td>
+          <td>256</td>
+          <td>340 / 485</td>
+          <td><span class="tag-worst">180 / 500</span></td>
+          <td>51 / 77</td>
+          <td>0,00 / 0,30</td>
+          <td>0,81 / 1,09</td>
+          <td>10,1 / 8,1</td>
+          <td class="mono-ids">immov8y6, dfms8aic</td>
+        </tr>
+        <tr>
+          <td>128</td>
+          <td>1024</td>
+          <td>400 / 414</td>
+          <td>371 / 461</td>
+          <td class="tag-worst">505 / 498</td>
+          <td class="tag-worst">0,00 / 0,00</td>
+          <td class="tag-worst">23,5 / 23,4</td>
+          <td class="tag-worst">17,8 / 17,7</td>
+          <td class="mono-ids">tqwv3nh9, 9g7tdlj1</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Propagação do Erro do Crítico ao Ator:</strong> Em <i>n</i>=128, a soma empírica de recompensas sem amortecimento por bootstrap infla drasticamente a variância do alvo, fazendo a <code>value_loss</code> explodir de ~0 para patamares superiores a <strong>500</strong>. Esse erro destrói a calibração da vantagem: os pesos do gradiente passam a ter média espúria de +23,5 e desvio de 17,8 (contra média centrada em zero no baseline). Quando o crítico subestima sistematicamente os retornos, o peso da vantagem torna-se uniformemente positivo, reforçando qualquer ação executada e impedindo a diferenciação relativa exigida pela subida de gradiente.
+    </p>
+    <p class="analysis-p">
+      <strong>A Armadilha Analítica da Explained Variance em Micro-Lotes:</strong> Em <i>n</i>=1, a seed 2 registra EV = 0,90, aparentando excelência estatística. Trata-se de uma armadilha métrica: com <i>N</i>=8 e <i>n</i>=1, o lote possui apenas 8 transições altamente redundantes cujos alvos <i>r</i> + &gamma;<i>V</i>(<i>s'</i>) foram sintetizados pela própria rede de valor naquele mesmo instante. Explicar a variância de amostras autorreferenciadas e colineares é matematicamente trivial e não reflete acurácia preditiva sobre o valor real do estado. Já em <i>n</i> &ge; 32, a EV estaciona em 0,00 porque, com o bastão estabilizado, as trajetórias alcançam retornos homogêneos; a variância do denominador Var(<i>y</i>) colapsa para zero, tornando a métrica analiticamente instável.
+    </p>
+  </div>
+
+  <div>
+    <h2>
+      <span>Q3 &mdash; Regularização por Bônus de Entropia: Colapso Prematuro vs. Saturação Estocástica</span>
+      <span class="param-tag">a2c.ent_coef &isin; {0, 0.01, 0.1}</span>
+    </h2>
+
+    <div class="pred-card">
+      <span class="pred-title">Hipótese Teórica (A Priori)</span>
+      <p>
+        O bônus de entropia impede que a política colapse prematuramente em ações determinísticas antes da exploração do espaço. Um coeficiente excessivo (0,1) fará o termo &minus;&beta;<i>H</i>(&pi;) dominar a função de perda, travando a entropia próxima da distribuição uniforme (ln 2 &approx; 0,693) e impedindo o equilíbrio fino. Com coeficiente nulo (0), a política deve convergir rapidamente no CartPole devido à extrema simplicidade e densidade de seu sinal de reforço.
+      </p>
+    </div>
+
+    <figure class="half-fig">
+      <img src="figs/q3_ent_coef.png" alt="Q3: Retorno e entropia">
+      <figcaption><strong>Figura 3:</strong> Retorno médio e trajetória da entropia de Shannon da política categórica sob diferentes fatores de regularização &beta;. Linha pontilhada indica o teto uniforme para 2 ações (ln 2 &approx; 0,693).</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ent_coef</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy (s1 / s2)</th>
+          <th>1º Passo com Retorno &ge; 450</th>
+          <th>Entropia Final (s1 / s2)</th>
+          <th>Run IDs (s1, s2)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>0 (Sem Bônus)</td>
+          <td><span class="tag-best">489 / 499</span></td>
+          <td><span class="tag-best">500 / 500</span></td>
+          <td><span class="tag-best">129k / 131k</span></td>
+          <td>0,47 / 0,31</td>
+          <td class="mono-ids">4223izo4, dsyhmjsz</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td>0,01 (Baseline)</td>
+          <td>478 / 461</td>
+          <td>500 / 482</td>
+          <td>228k / 274k</td>
+          <td>0,55 / 0,55</td>
+          <td class="mono-ids">5vukxjqp, q77wk364</td>
+        </tr>
+        <tr>
+          <td>0,1 (Excessivo)</td>
+          <td><span class="tag-worst">368 / 340</span></td>
+          <td><span class="tag-worst">357 / 425</span></td>
+          <td><span class="tag-worst">Nunca Atingiu</span></td>
+          <td><span class="tag-worst">0,60 / 0,60</span></td>
+          <td class="mono-ids">34521kv7, ue9iv084</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Mecanismo de Degradação por Estocasticidade Forçada:</strong> Em <code>ent_coef=0.1</code>, a entropia estabiliza-se rigidamente em 0,60 durante todo o treino. A maximização da desordem supera o incentivo de ganho de recompensa, impedindo que os logits convirjam para distribuições assertivas. Em estados limítrofes de tombamento do bastão, a política injeta perturbações aleatórias que abortam prematuramente o episódio, estagnando o retorno médio em 340–368 e impedindo o cumprimento da meta de 450.
+    </p>
+    <p class="analysis-p">
+      <strong>A Benevolência Estrutural do CartPole:</strong> Com <code>ent_coef=0</code>, a política reduz livremente sua entropia para 0,31–0,47 e atinge o limiar de excelência (&ge; 450) em apenas <strong>129k passos</strong> &mdash; duas vezes mais rápido que o baseline. O CartPole permite aprendizado perfeito mesmo sem entropia porque conjuga três propriedades favoráveis: (i) espaço de ação binário (|A| = 2, onde um colapso acidental ainda retém 50% de chance de correção); (ii) recompensas densas e imediatas (+1 por passo); e (iii) terminação no erro com crédito local imediato. Em domínios complexos com recompensas esparsas ou múltiplos graus de liberdade (como LunarLander com |A| = 4 ou Montezuma's Revenge), <code>ent_coef=0</code> provoca colapso irreversível em bacias de atração subótimas antes da descoberta da recompensa.
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental A2C</span>
+    <span>Página 2 de 3</span>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 3: Questão Q4 e Desafio Extra LunarLander                        -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div>
+    <h2>
+      <span>Q4 &mdash; Ablação do Baseline: Teoria da Variância e Colapso Entrópico</span>
+      <span class="param-tag">a2c.use_baseline &isin; {True, False} (Peso: R &minus; V vs. R)</span>
+    </h2>
+
+    <div class="pred-card">
+      <span class="pred-title">Hipótese Teórica (A Priori)</span>
+      <p>
+        Subtrair uma linha de base independente da ação não altera a esperança matemática do gradiente de política (<b>E</b><sub><i>a</i>&sim;&pi;</sub>[&nabla;<sub>&theta;</sub> log &pi;<sub>&theta;</sub>(<i>a</i>|<i>s</i>) <i>V</i>(<i>s</i>)] = 0), mas atua como operador crucial de redução de variância. Sem baseline (<i>w</i> = <i>R</i>), a variância dos pesos deve explodir. Dado que as recompensas no CartPole são estritamente positivas (<i>r<sub>t</sub></i> = +1 &rArr; <i>R</i> > 0), todo gradiente impulsionará a probabilidade da ação sorteada, deflagrando um ciclo de feedback positivo que colapsará a entropia para zero e paralisará o aprendizado.
+      </p>
+    </div>
+
+    <figure>
+      <img src="figs/q4_use_baseline.png" alt="Q4: Retorno, advantage std, mean e entropia">
+      <figcaption><strong>Figura 4:</strong> Dinâmica comparativa com baseline (<i>A</i> = <i>R</i> &minus; <i>V</i>) e sem baseline (<i>A</i> = <i>R</i>): retorno médio, desvio padrão &sigma;(<i>A</i>) (escala log), média amostral &mu;(<i>A</i>) e colapso catastrófico da entropia da política.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>use_baseline</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy (s1 / s2)</th>
+          <th>Média Pesos A (Fim)</th>
+          <th>Desvio Pesos A (Fim)</th>
+          <th>Entropia Final (s1 / s2)</th>
+          <th>Policy Loss Mínima</th>
+          <th>Run IDs (s1, s2)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: #eff6ff;">
+          <td>Sim &mdash; R &minus; V(s) (Baseline)</td>
+          <td><span class="tag-best">478 / 461</span></td>
+          <td><span class="tag-best">500 / 482</span></td>
+          <td>&minus;0,07 / &minus;0,71</td>
+          <td><span class="tag-best">0,39 / 2,39</span></td>
+          <td>0,55 / 0,55</td>
+          <td>&minus;14 / &minus;10</td>
+          <td class="mono-ids">5vukxjqp, q77wk364</td>
+        </tr>
+        <tr>
+          <td>Não &mdash; R (Ablação REINFORCE)</td>
+          <td><span class="tag-worst">98 / 97</span></td>
+          <td><span class="tag-worst">57 / 95</span></td>
+          <td class="tag-worst">39,2 / 39,5</td>
+          <td class="tag-worst">16,1 / 16,3</td>
+          <td class="tag-worst">0,004 / 0,007</td>
+          <td class="tag-worst">0,0 / 0,0</td>
+          <td class="mono-ids">kiwifws0, 9ogc2rkl</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Validação Empírica da Redução de Variância:</strong> Os resultados empíricos confirmam o postulado teórico de Williams: o baseline preserva a média empírica centrada em zero (&mu; &approx; &minus;0,39), enquanto sem baseline a média salta para +39,3 e o desvio padrão cresce entre <strong>7 e 41 vezes</strong> (&sigma; = 16,2 vs 0,39). Sem a âncora de <i>V</i>(<i>s</i>), o estimador do gradiente torna-se excessivamente ruidoso, exigindo volumes impraticáveis de dados para que a direção ótima de ascensão emerja.
+    </p>
+    <p class="analysis-p">
+      <strong>O Fenômeno do Colapso por Realimentação Positiva:</strong> No CartPole, o retorno empírico <i>R</i> é invariavelmente positivo (<i>R</i> &isin; [1, 500]). Como consequência, o termo de perda &minus;log &pi;(<i>a</i>|<i>s</i>) &middot; <i>R</i> é estritamente côncavo e a <code>policy_loss</code> atinge mínimo idêntico a <strong>0,0</strong> (jamais negativando, ao passo que com baseline atinge &minus;14). Sob pesos estritamente positivos, <em>toda ação amostrada tem sua probabilidade incrementada</em>. A única via de declínio de uma ação inferior é ser selecionada menos vezes que a alternativa. Isso dispara uma realimentação viciosa: a ação ligeiramente mais frequente no início é ainda mais reforçada até monopolizar a distribuição categórica. A entropia colapsa instantaneamente para <strong>0,004</strong> (determinismo espúrio), paralisando o retorno médio em pífios 57–95.
+    </p>
+  </div>
+
+  <div>
+    <h2>
+      <span>Extra &mdash; LunarLander-v3: Transferência, Ajuste Sistemático e Limitações Estruturais</span>
+      <span class="param-tag">configs/a2c_lunarlander.yml (Meta &ge; 200)</span>
+    </h2>
+
+    <figure>
+      <img src="figs/extra_lunarlander.png" alt="Extra: Curvas no LunarLander">
+      <figcaption><strong>Figura 5:</strong> Trajetória de aprendizado no LunarLander-v3 (retorno médio dos últimos 100 episódios) e decaimento da entropia ao longo do refinamento paramétrico até 20M passos. Linhas pontilhadas indicam o limiar de resolução (200) e a entropia uniforme para 4 ações (ln 4 &approx; 1,386).</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Configuração Paramétrica Investigada</th>
+          <th>Timesteps</th>
+          <th>Pico de Retorno</th>
+          <th>Retorno Final (Treino)</th>
+          <th>Eval Greedy (10 Ep.)</th>
+          <th>Entropia Final</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>lr 7e-4, n=16, 16 envs, ent 0,01 (Transposição Direta CartPole)</td>
+          <td>5M</td>
+          <td>4</td>
+          <td><span class="tag-worst">&minus;126</span></td>
+          <td><span class="tag-worst">&minus;112</span></td>
+          <td>0,72</td>
+        </tr>
+        <tr>
+          <td>lr 3e-4, n=32, 16 envs, ent 0,01</td>
+          <td>5M</td>
+          <td>39</td>
+          <td>&minus;92</td>
+          <td>&minus;36</td>
+          <td>0,87</td>
+        </tr>
+        <tr>
+          <td>lr 1e-4, n=32, 16 envs, ent 0,001</td>
+          <td>8M</td>
+          <td>12</td>
+          <td>&minus;23</td>
+          <td>&minus;9</td>
+          <td>0,93</td>
+        </tr>
+        <tr>
+          <td>lr 1e-4, n=32, 16 envs, ent 0 (Sem Regularização)</td>
+          <td>8M</td>
+          <td>14</td>
+          <td>&minus;42</td>
+          <td>&minus;54</td>
+          <td>0,90</td>
+        </tr>
+        <tr>
+          <td>lr 1e-4, n=64, 16 envs, ent 0,001</td>
+          <td>8M</td>
+          <td>151</td>
+          <td>115</td>
+          <td>19</td>
+          <td>0,82</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td>lr 1e-4, n=64, 16 envs, ent 0,001 (Treino Estendido)</td>
+          <td>20M</td>
+          <td><span class="tag-best">174</span></td>
+          <td><span class="tag-best">121</span></td>
+          <td><span class="tag-best">157 &plusmn; 106</span></td>
+          <td>0,66</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Diagnóstico Rigoroso dos Gargalos e Desempenho Quase-Resolvido:</strong> A transposição ingênua dos parâmetros do CartPole colapsa catastroficamente para &minus;126 devido à amplitude de recompensa (&minus;400 a +250) e termo terminal de impacto (&plusmn;100). A estabilização exigiu amortecimento da taxa de aprendizado (lr &rarr; 1&times;10<sup>&minus;4</sup>), expansão do horizonte (<i>n</i>=64, permitindo propagar o sinal terminal sem depender de dezenas de bootstraps ruidosos) e compressão da entropia (0,001, essencial para mitigar o desperdício de combustível). Na melhor configuração com 20M passos, a política atinge <strong>157 &plusmn; 106 na avaliação greedy</strong>. A análise dos 10 episódios revela que <strong>6 episódios obtiveram pouso perfeito com retornos entre 201 e 240</strong>, 2 colidiram e 1 desceu fora do centro. A meta média de 200 não foi atingida em virtude de três limitações intrínsecas: (1) <em>Ausência de GAE e Normalização de Vantagem:</em> sem decaimento &lambda; nem padronização em batch, episódios de queda (&minus;400) geram choques de gradiente desproporcionais; (2) <em>Ineficiência Amostral On-Policy:</em> o A2C executa apenas uma etapa de descida por lote e descarta os dados, necessitando de ordens de magnitude a mais de interação que métodos off-policy ou PPO; e (3) <em>Exploração Residual:</em> a entropia decaiu para 0,66 (de um teto de 1,39); acelerar esse decaimento manualmente (<code>ent_coef=0</code>) causou colapso prematuro (&minus;42).
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental A2C</span>
+    <span>Página 3 de 3</span>
+  </div>
+</div>
+
+</body>
+</html>

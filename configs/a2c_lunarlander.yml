@@ -1,0 +1,36 @@
+# A2C on LunarLander-v3 (assignment extra). Starts from a2c_cartpole and
+# changes what the harder environment needs:
+#   - 5M steps instead of 500k: sparse-ish credit (the big terminal reward
+#     for landing) takes far longer to propagate than CartPole's dense +1;
+#   - 16 actors instead of 8: more decorrelated transitions per update, which
+#     matters more when returns range from -400 to +250;
+#   - num_steps 16 instead of 5: a longer n-step horizon carries the terminal
+#     landing/crash reward back over more states per update;
+#   - ent_coef 0.01 with 4 actions: keeps the extra engines in play early.
+#
+# Needs Box2D:  pip install swig && pip install --no-build-isolation box2d-py
+
+algorithm: a2c
+env_id: LunarLander-v3
+seed: 1
+cuda: false
+total_timesteps: 5000000
+num_envs: 16
+
+track: true
+capture_video: true
+save_model: true
+checkpoint_every: 0
+
+agent:
+  activation: Tanh
+  hidden_layers_size: 64
+
+a2c:
+  learning_rate: 7.0e-4
+  num_steps: 16
+  gamma: 0.99
+  vf_coef: 0.5
+  ent_coef: 0.01
+  max_grad_norm: 0.5
+  use_baseline: true

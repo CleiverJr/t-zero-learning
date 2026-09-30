@@ -114,7 +114,15 @@ def compute_n_step_returns(
         R_T = next_value.
     """
     # ===================== YOUR CODE HERE (Part 1) =====================
-    raise NotImplementedError("Implement compute_n_step_returns")
+    returns = torch.zeros_like(rewards)
+    # walk backwards: R_t = r_t + gamma * (1 - done_t) * R_{t+1}, seeded with
+    # V(s_T); the (1 - done) factor cuts the recursion at episode boundaries,
+    # independently per column (environment)
+    R = next_value
+    for t in reversed(range(rewards.shape[0])):
+        R = rewards[t] + gamma * (1.0 - dones[t]) * R
+        returns[t] = R
+    return returns
     # ===================================================================
 
 
@@ -132,7 +140,10 @@ def compute_policy_loss(
     *ascent*.
     """
     # ===================== YOUR CODE HERE (Part 2) =====================
-    raise NotImplementedError("Implement compute_policy_loss")
+    weights = returns - values if use_baseline else returns
+    # the weight is a constant for the policy gradient: detach so no gradient
+    # reaches the critic through it (the critic is trained by value_loss alone)
+    return -(logprobs * weights.detach()).mean()
     # ===================================================================
 
 
