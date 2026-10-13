@@ -1,0 +1,668 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atividade 07 — Proximal Policy Optimization (PPO)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 6mm 9mm 6.5mm 9mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.65pt;
+    line-height: 1.27;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page Wrapper */
+  .page {
+    width: 100%;
+    height: 282mm;
+    max-height: 282mm;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Header & Metadata */
+  .doc-header {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
+  }
+  .doc-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1px;
+  }
+  .doc-category {
+    font-size: 6.6pt;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #4338ca;
+  }
+  .doc-status {
+    font-size: 6.6pt;
+    font-weight: 700;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 0.5px 5px;
+    border-radius: 8px;
+  }
+  h1 {
+    font-size: 12.2pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 2px 0;
+    line-height: 1.15;
+    letter-spacing: -0.2px;
+  }
+  .meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 7.1pt;
+    color: #475569;
+  }
+  .meta-author {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .meta-bar a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* Setup Box */
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 3.5px 6px;
+    margin-bottom: 4.5px;
+  }
+  .setup-col h3 {
+    margin: 0 0 1.5px 0;
+    font-size: 6.9pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #334155;
+  }
+  .setup-col p {
+    margin: 0;
+    font-size: 7.05pt;
+    line-height: 1.24;
+    text-align: justify;
+    color: #334155;
+  }
+
+  /* Section Styles */
+  h2 {
+    font-size: 8.8pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 2.5px 0 1.5px 0;
+    padding-bottom: 1.2px;
+    border-bottom: 1.5px solid #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h2 .param-tag {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #475569;
+    font-family: ui-monospace, Menlo, monospace;
+    white-space: nowrap;
+  }
+
+  /* Card / Callout */
+  .info-card {
+    background: #f0fdf4;
+    border-left: 2.5px solid #16a34a;
+    border-radius: 0 3px 3px 0;
+    padding: 2.5px 6px;
+    margin: 2px 0 2.5px 0;
+  }
+  .info-card.warn {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+  }
+  .info-card .card-title {
+    font-size: 6.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #15803d;
+    display: block;
+    margin-bottom: 0.5px;
+  }
+  .info-card.warn .card-title {
+    color: #b91c1c;
+  }
+  .info-card p {
+    margin: 0;
+    font-size: 7.15pt;
+    line-height: 1.22;
+    color: #14532d;
+    text-align: justify;
+  }
+  .info-card.warn p {
+    color: #7f1d1d;
+  }
+
+  /* Figures */
+  figure {
+    margin: 1.5px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    padding: 1px;
+  }
+  figure img {
+    width: 100%;
+    display: block;
+  }
+  figcaption {
+    font-size: 6.4pt;
+    color: #64748b;
+    padding: 1.2px 4px;
+    line-height: 1.15;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+  }
+  figcaption strong { color: #334155; }
+
+  /* Side-by-Side Figures Grid */
+  .fig-grid {
+    display: grid;
+    grid-template-columns: 1.74fr 1fr;
+    gap: 4px;
+    margin: 1.5px 0;
+  }
+  .fig-grid figure {
+    margin: 0;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.6pt;
+    margin: 1.5px 0 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    padding: 2px 3.5px;
+    border: 1px solid #cbd5e1;
+    text-align: right;
+    font-size: 6.5pt;
+    letter-spacing: 0.15px;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 1.8px 3.5px;
+    border: 1px solid #e2e8f0;
+    text-align: right;
+    white-space: nowrap;
+    color: #1e293b;
+  }
+  td:first-child { text-align: left; font-weight: 600; }
+  tr:nth-child(even) { background: #f8fafc; }
+  table.changes-table td, table.changes-table th {
+    white-space: normal;
+    line-height: 1.20;
+  }
+  table.changes-table th:nth-child(4), table.changes-table td:nth-child(4),
+  table.changes-table th:nth-child(5), table.changes-table td:nth-child(5) {
+    text-align: left;
+  }
+  .tag-best {
+    color: #047857;
+    font-weight: 700;
+    background: #d1fae5;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-worst {
+    color: #b91c1c;
+    font-weight: 700;
+    background: #fee2e2;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-base {
+    color: #1d4ed8;
+    font-weight: 700;
+    background: #dbeafe;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  td.mono-ids {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.0pt;
+    color: #64748b;
+  }
+
+  /* Discussion Text */
+  .analysis-p {
+    font-size: 7.55pt;
+    line-height: 1.26;
+    text-align: justify;
+    margin: 0 0 2.2px 0;
+    color: #1e293b;
+    hyphens: auto;
+  }
+  .analysis-p strong { color: #0f172a; }
+  code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.9pt;
+    background: #f1f5f9;
+    padding: 0 2px;
+    border-radius: 2px;
+    color: #0f172a;
+  }
+  i { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+  /* Footer */
+  .page-footer {
+    margin-top: auto;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 6.4pt;
+    color: #94a3b8;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 1: Cabeçalho, Implementação, Protocolo, Diagnóstico e Triagem    -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-badge-row">
+      <span class="doc-category">Reinforcement Learning &middot; Aprendizado por Reforço Profundo</span>
+      <span class="doc-status">&#10003; 20/20 Unit Tests Passed (100%)</span>
+    </div>
+    <h1>Atividade 07: Proximal Policy Optimization (PPO)</h1>
+    <div class="meta-bar">
+      <span class="meta-author">Cleiver Batista da Silva Junior (individual)</span>
+      <span>&bull;</span>
+      <span>Fork Oficial: <a href="https://github.com/CleiverJr/t-zero-learning">github.com/CleiverJr/t-zero-learning</a></span>
+      <span>&bull;</span>
+      <span>Logs W&amp;B: <a href="https://wandb.ai/jr-cleiver-federal-university-of-goi-s/ppo-assignment">projeto ppo-assignment</a></span>
+      <span>&bull;</span>
+      <span>Ambiente: LunarLander-v3 (Critério: &ge; 200)</span>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <div class="setup-col">
+      <h3>Implementação Algorítmica (Partes 1, 2 e 3)</h3>
+      <p>
+        <strong>1. Generalized Advantage Estimation &mdash; GAE (<code>algorithms/ppo.py</code>):</strong> Acumulação recursiva retroativa <i>&delta;<sub>t</sub></i> = <i>r<sub>t</sub></i> + &gamma;(1 &minus; <i>d</i><sub><i>t</i>+1</sub>)<i>V</i>(<i>s</i><sub><i>t</i>+1</sub>) &minus; <i>V</i>(<i>s<sub>t</sub></i>) e <i>&Acirc;<sub>t</sub></i> = <i>&delta;<sub>t</sub></i> + &gamma;&lambda;(1 &minus; <i>d</i><sub><i>t</i>+1</sub>)<i>&Acirc;</i><sub><i>t</i>+1</sub>, fornecendo alvos de regressão <i>R<sub>t</sub></i> = <i>&Acirc;<sub>t</sub></i> + <i>V</i>(<i>s<sub>t</sub></i>). Obedece rigorosamente à convenção do CleanRL onde <code>dones[t+1]</code> sinaliza o término entre os passos <i>t</i> e <i>t</i>+1.<br>
+        <strong>2. Perda de Política Clipada Pessimista:</strong> Minimização da perda substituta <i>L<sub>&pi;</sub></i> = &minus;<sup>1</sup>&frasl;<sub><i>B</i></sub> &sum; min(<i>r<sub>i</sub>A<sub>i</sub></i>, clip(<i>r<sub>i</sub></i>, 1&plusmn;&epsilon;)<i>A<sub>i</sub></i>), onde <i>r<sub>i</sub></i> = exp(log &pi;<sub>new</sub> &minus; log &pi;<sub>old</sub>) e as vantagens normalizadas são desconectadas do grafo computacional.<br>
+        <strong>3. Diagnósticos Estocásticos (KL &amp; Clipfrac):</strong> Estimador não-negativo de baixa variância <i>k</i><sub>3</sub> = ((<i>r</i> &minus; 1) &minus; log <i>r</i>) para divergência KL e fração de amostragem clipada (|<i>r</i> &minus; 1| > &epsilon;), avaliados sob <code>no_grad</code>.
+      </p>
+    </div>
+    <div class="setup-col">
+      <h3>Protocolo &amp; Metodologia Experimental</h3>
+      <p>
+        <strong>Configuração Base:</strong> <code>configs/ppo_lunarlander.yml</code> (parâmetros do CleanRL derivados do CartPole: 4 ambientes, <i>n</i>=128, lr=2,5&times;10<sup>&minus;4</sup>, 4 épocas, 4 minibatches, &epsilon;=0,2).<br>
+        <strong>Critério de Resolução:</strong> Retorno médio dos últimos 100 episódios &ge; 200 <strong>e</strong> avaliação greedy determinística de 10 episódios &ge; 200 em <strong>2 seeds independentes</strong> dentro de no máximo 2M passos.<br>
+        <strong>Eficiência Amostral:</strong> O ambiente foi resolvido com apenas <strong>1 milhão de passos</strong> (50% do orçamento permitido). Retorno final computado sobre os últimos 30% estáveis do treinamento. Taxas de SPS medidas em isolamento.
+      </p>
+    </div>
+  </div>
+
+  <div>
+    <h2>
+      <span>Parte 4 &mdash; Resolvendo o LunarLander-v3: Diagnóstico e Triagem Paramétrica</span>
+      <span class="param-tag">total_timesteps = 1.000.000 (Orçamento Máx: 2.000.000)</span>
+    </h2>
+
+    <div class="info-card warn">
+      <span class="card-title">Diagnóstico Analítico do Configuração Inicial</span>
+      <p>
+        A configuração padrão atinge retorno final medíocre de apenas <strong>9,5 e 9,1</strong> (eval 9,1 e &minus;34,6). As métricas diagnósticas revelam o gargalo: o KL aproximado mediano é de ínfimos <strong>0,0003</strong> e a fração clipada (<code>clipfrac</code>) é <strong>exatamente 0,000</strong>. Isso demonstra que o clipping <em>jamais atuou</em> e a política praticamente não se moveu durante as 4 épocas. Como o crítico apresenta variância explicada razoável (0,60) e a entropia mantém-se saudável (0,81), não há instabilidade numérica: o algoritmo sofre de <strong>subaproveitamento amostral extremo</strong>, descartando cada lote intacto.
+      </p>
+    </div>
+
+    <figure>
+      <img src="figs/p4_triagem.png" alt="Triagem Paramétrica Isolada">
+      <figcaption><strong>Figura 1:</strong> Triagem empírica de intervenções isoladas sobre o baseline (Seed 1, 1M passos): retorno médio dos últimos 100 episódios, divergência <code>approx_kl</code> e fração de clipping <code>clipfrac</code>. Apenas intervenções que ativam o clipping destravam o retorno.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Intervenção Paramétrica Isolada</th>
+          <th>Retorno Final</th>
+          <th>Eval Greedy</th>
+          <th>Approx KL</th>
+          <th>Clipfrac</th>
+          <th>Lote (N&times;n)</th>
+          <th>Atualizações</th>
+          <th>SPS</th>
+          <th>Run ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: #eff6ff;">
+          <td>Configuração Inicial (Baseline)</td>
+          <td class="tag-worst">9,5</td>
+          <td>9,1</td>
+          <td>0,0003</td>
+          <td class="tag-worst">0,000</td>
+          <td>512</td>
+          <td>31.248</td>
+          <td>9.858</td>
+          <td class="mono-ids">rp5mfsrh</td>
+        </tr>
+        <tr>
+          <td>num_envs: 4 &rarr; 16</td>
+          <td class="tag-worst">&minus;38,1</td>
+          <td>&minus;23,3</td>
+          <td>0,0002</td>
+          <td class="tag-worst">0,000</td>
+          <td>2.048</td>
+          <td>7.808</td>
+          <td><span class="tag-best">20.650</span></td>
+          <td class="mono-ids">2ph6ewcc</td>
+        </tr>
+        <tr>
+          <td>gamma: 0,99 &rarr; 0,999</td>
+          <td class="tag-worst">6,9</td>
+          <td>&minus;4,8</td>
+          <td>0,0005</td>
+          <td class="tag-worst">0,000</td>
+          <td>512</td>
+          <td>31.248</td>
+          <td>8.973</td>
+          <td class="mono-ids">b2e3xcug</td>
+        </tr>
+        <tr>
+          <td>update_epochs: 4 &rarr; 10, num_minibatches: 4 &rarr; 32</td>
+          <td><span class="tag-best">213,5</span></td>
+          <td>188,4</td>
+          <td>0,0055</td>
+          <td><span class="tag-best">0,046</span></td>
+          <td>512</td>
+          <td>624.960</td>
+          <td class="tag-worst">2.180</td>
+          <td class="mono-ids">gakvd2xf</td>
+        </tr>
+        <tr>
+          <td>learning_rate: 2,5&times;10<sup>&minus;4</sup> &rarr; 1,0&times;10<sup>&minus;3</sup></td>
+          <td>183,2</td>
+          <td>192,8</td>
+          <td>0,0027</td>
+          <td>0,005</td>
+          <td>512</td>
+          <td>31.248</td>
+          <td>10.223</td>
+          <td class="mono-ids">okw5vduf</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>Mecanismos Bem-Sucedidos: Reuso Intensivo e Magnitude do Passo:</strong> O aumento para 10 épocas e 32 minibatches (minibatch efetivo de 16 transições) ataca frontalmente o subaproveitamento diagnosticado. O reuso intensivo eleva o <code>approx_kl</code> para 0,0055 e tira o <code>clipfrac</code> do zero para 0,046, fazendo o retorno saltar espetacularmente de 9,5 para <strong>213,5</strong> (resolvendo o ambiente em 1 seed). A contrapartida física é a sobrecarga computacional: 625k passos de gradiente derrubam o SPS de 9.858 para 2.180. Paralelamente, quadruplicar a taxa de aprendizado (lr = 1&times;10<sup>&minus;3</sup>) atinge retorno de 183,2 com SPS intacto (10.223), confirmando que a política original operava sob passos excessivamente conservadores (KL de 0,0027 ainda bem abaixo do limite seguro usual de 0,01).
+    </p>
+    <p class="analysis-p">
+      <strong>Validação pelas Falhas Observadas:</strong> As intervenções isoladas que fracassaram corroboram o diagnóstico com precisão: expandir <code>num_envs=16</code> isoladamente piorou o retorno (&minus;38,1) porque ampliou o lote para 2.048, reduzindo as atualizações para apenas 7.808 e mantendo o <code>clipfrac</code> zerado &mdash; agravando o subaproveitamento apesar do ganho em SPS. O ajuste de &gamma; = 0,999 foi inócuo (6,9) porque o gargalo não era o horizonte de crédito, mas a incapacidade do gradiente de atualizar a política. Logo, apenas alterações que forçaram a política a se deslocar destravam o aprendizado.
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental PPO</span>
+    <span>Página 1 de 3</span>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 2: Síntese da Otimização, Config Final e Validação (2 Seeds)    -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div>
+    <h2>
+      <span>Configuração Final: Sinergia Paramétrica e Resolução do LunarLander-v3</span>
+      <span class="param-tag">configs/ppo_lunarlander_final.yml</span>
+    </h2>
+
+    <p class="analysis-p">
+      <strong>Interação Não-Linear e Amortecimento por Paralelismo:</strong> Ao combinar diretamente as duas intervenções vencedoras (lr = 1&times;10<sup>&minus;3</sup> com 10 épocas e 32 minibatches no lote original de 512), o aprendizado <em>ultrapassou o limiar de estabilidade</em>: o <code>approx_kl</code> saltou para 0,0112 e o <code>clipfrac</code> explodiu para 0,142, desestabilizando a política e limitando o retorno a 120,1. A reinserção de <code>num_envs=16</code> (lote de 2.048 com minibatches de 64) funcionou como estabilizador estatístico perfeito: ao amortecer o ruído do gradiente, reconduziu o KL para a faixa ideal (0,0072) e o <code>clipfrac</code> para 0,070, enquanto a vetorização recuperou o SPS para 5.800+.
+    </p>
+
+    <table class="changes-table">
+      <thead>
+        <tr>
+          <th style="width: 22%;">Parâmetro do Config</th>
+          <th style="width: 11%;">Valor Inicial</th>
+          <th style="width: 11%;">Valor Final</th>
+          <th style="width: 29%;">Motivo Observado nos Gráficos</th>
+          <th style="width: 27%;">Consequência Empírica</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>ppo.learning_rate</code></td>
+          <td>2,5&times;10<sup>&minus;4</sup></td>
+          <td><strong>1,0&times;10<sup>&minus;3</sup></strong></td>
+          <td><code>approx_kl</code> ~3e-4 indicava passos excessivamente tímidos</td>
+          <td>Acelera progressão de retorno sem violar estabilidade</td>
+        </tr>
+        <tr>
+          <td><code>ppo.update_epochs</code></td>
+          <td>4</td>
+          <td><strong>10</strong></td>
+          <td><code>clipfrac</code> = 0,000 comprovava rollouts subaproveitados</td>
+          <td>Multiplica gradientes por lote e induz exploração assertiva</td>
+        </tr>
+        <tr>
+          <td><code>ppo.num_minibatches</code></td>
+          <td>4</td>
+          <td><strong>32</strong></td>
+          <td>Tamanho de minibatch de 64 transições (2.048 / 32)</td>
+          <td>Eleva atualizações por época sem sobrecarregar memória</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td><code>num_envs</code></td>
+          <td>4</td>
+          <td><strong>16</strong></td>
+          <td>Com as mudanças acima, KL inflou a 0,0112 (instabilidade)</td>
+          <td>Amortece variância do lote, traz KL a 0,007 e triplica SPS</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <figure>
+      <img src="figs/p4_inicial_vs_final.png" alt="Configuração Inicial vs. Final">
+      <figcaption><strong>Figura 2:</strong> Comparação longitudinal entre Configuração Inicial e Configuração Final (2 seeds cada; Linha contínua = Seed 1; Tracejada = Seed 2). Painéis exibem retorno médio (100 ep.), fração clipada, variância explicada do crítico e decaimento da entropia.</figcaption>
+    </figure>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Configuração</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy (s1 / s2)</th>
+          <th>Approx KL</th>
+          <th>Clipfrac</th>
+          <th>Explained Variance</th>
+          <th>Entropia Final</th>
+          <th>Run IDs (s1, s2)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Configuração Inicial</td>
+          <td class="tag-worst">9,5 / 9,1</td>
+          <td class="tag-worst">9,1 / &minus;34,6</td>
+          <td>0,0003</td>
+          <td class="tag-worst">0,000</td>
+          <td>0,63 / 0,57</td>
+          <td>0,82 / 0,80</td>
+          <td class="mono-ids">rp5mfsrh, ueibrj4b</td>
+        </tr>
+        <tr style="background: #eff6ff;">
+          <td><strong>Configuração Final (PPO)</strong></td>
+          <td><span class="tag-best">259,1 / 245,7</span></td>
+          <td><span class="tag-best">263,5 / 281,3</span></td>
+          <td>0,0072</td>
+          <td><span class="tag-best">0,070</span></td>
+          <td><span class="tag-best">0,90 / 0,93</span></td>
+          <td>0,61 / 0,60</td>
+          <td class="mono-ids">ugdsi19k, k50jt38r</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="info-card">
+      <span class="card-title">Atendimento Integral aos Critérios de Resolução do LunarLander-v3</span>
+      <p>
+        O ambiente é oficialmente resolvido em ambas as seeds com apenas <strong>1 milhão de passos de ambiente</strong> (metade do teto estabelecido): o retorno médio atinge <strong>259,1 e 245,7</strong>, e a avaliação greedy consolida <strong>263,5 e 281,3</strong> (ambos substancialmente acima do limiar de 200). A variabilidade estocástica entre as sementes é desprezível (diferença de apenas 13 pontos de retorno), evidenciando convergência sólida e replicável.
+      </p>
+    </div>
+
+    <p class="analysis-p">
+      <strong>Efeitos Sistêmicos no Crítico e na Política:</strong> O ganho da configuração final repercute em toda a dinâmica do aprendizado:
+    </p>
+    <p class="analysis-p">
+      <strong>1. Otimização Cruzada do Crítico (Explained Variance):</strong> A variância explicada da função de valor salta de ~0,60 para <strong>0,90–0,93</strong>. As 10 épocas de mini-batch não beneficiam apenas o ator; a cabeça de valor realiza 320 ajustes por rollout, aproximando a estimativa de <i>V</i>(<i>s</i>) do retorno empírico de Monte Carlo suavizado pelo GAE. Um crítico com EV superior a 90% fornece vantagens desprovidas de viés sistemático, viabilizando gradientes limpos para a política.
+    </p>
+    <p class="analysis-p">
+      <strong>2. Compressão Entrópica e Domínio do Pouso:</strong> A entropia de Shannon da política decai de 0,81 para <strong>0,60–0,61</strong> (em relação ao teto uniforme de ln 4 &approx; 1,386). Ao contrário do A2C sem baseline (onde a entropia colapsava precocemente para 0,004), no PPO a queda é gradual e controlada, indicando que a rede abandonou o ruído de queima aleatória de combustível e convergiu para manobras determinísticas de pouso suave na zona demarcada pelas bandeiras.
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental PPO</span>
+    <span>Página 2 de 3</span>
+  </div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 3: Parte 5 — PPO vs. A2C Comparativo Integral                   -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div>
+    <h2>
+      <span>Parte 5 &mdash; Análise Comparativa Aprofundada: PPO vs. A2C no LunarLander-v3</span>
+      <span class="param-tag">Mesmo Orçamento: 1.000.000 Passos &bull; 2 Seeds Independentes</span>
+    </h2>
+
+    <p class="analysis-p">
+      <strong>Baseline de Controle (A2C):</strong> O A2C utilizado parte rigorosamente da implementação desenvolvida na Atividade 06. Em 1M passos, a melhor configuração empírica foi o baseline direto do CartPole (lr = 7&times;10<sup>&minus;4</sup>, <i>n</i>=5, 8 ambientes; retorno 82,1 / &minus;112,4 e eval 201,6 / &minus;118,9). Variantes projetadas para orçamentos longos (<i>n</i>=32 ou 64) colapsaram (&minus;39 a &minus;104) porque realizavam pouquíssimas atualizações em 1M passos.
+    </p>
+
+    <div class="fig-grid">
+      <figure>
+        <img src="figs/p5_ppo_vs_a2c.png" alt="PPO vs A2C: Retorno e Updates">
+        <figcaption><strong>Figura 3:</strong> Retorno médio e passos acumulados de gradiente (num_updates) ao longo de 1M passos de ambiente.</figcaption>
+      </figure>
+      <figure>
+        <img src="figs/p5_tempo.png" alt="Retorno vs Tempo de Relógio">
+        <figcaption><strong>Figura 4:</strong> Retorno por tempo de relógio isolado (sem concorrência de CPU).</figcaption>
+      </figure>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Algoritmo</th>
+          <th>Retorno Final (s1 / s2)</th>
+          <th>Eval Greedy (s1 / s2)</th>
+          <th>Passos p/ 0</th>
+          <th>Passos p/ 100</th>
+          <th>Passos p/ 200</th>
+          <th>Updates Acumulados</th>
+          <th>SPS Isolado</th>
+          <th>Tempo (1M passos)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr style="background: #eff6ff;">
+          <td><strong>PPO (Config Final)</strong></td>
+          <td><span class="tag-best">259,1 / 245,7</span></td>
+          <td><span class="tag-best">263,5 / 281,3</span></td>
+          <td><span class="tag-best">106k / 92k</span></td>
+          <td><span class="tag-best">127k / 168k</span></td>
+          <td><span class="tag-best">211k / 258k</span></td>
+          <td><span class="tag-best">156.160</span></td>
+          <td>7.184</td>
+          <td>143 s</td>
+        </tr>
+        <tr>
+          <td><strong>A2C (Melhor em 1M)</strong></td>
+          <td>82,1 / <span class="tag-worst">&minus;112,4</span></td>
+          <td>201,6 / <span class="tag-worst">&minus;118,9</span></td>
+          <td>214k / 138k</td>
+          <td>744k / <span class="tag-worst">Nunca</span></td>
+          <td><span class="tag-worst">Nunca</span></td>
+          <td>25.000</td>
+          <td><span class="tag-best">21.787</span></td>
+          <td><span class="tag-best">49 s</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p class="analysis-p">
+      <strong>1. Eficiência Amostral (Passos de Ambiente):</strong> O PPO demonstra superioridade esmagadora. Ele atinge retorno 0 em ~100k passos, retorno 100 em ~145k e cruza o limiar de resolução (200) em apenas <strong>211k e 258k passos</strong>. O A2C leva 214k passos apenas para alcançar retorno zero, atinge 100 somente na seed 1 aos 744k passos (3,5&times; mais passos do que o PPO precisou para resolver a tarefa) e <em>jamais atinge retorno 200</em> em nenhuma das sementes. No ponto em que o PPO resolve o ambiente (&frac14; do treino), o A2C ainda luta para evitar quedas imediatas.
+    </p>
+    <p class="analysis-p">
+      <strong>2. Tempo de Relógio vs. Frequência de Otimização:</strong> Por passo bruto de ambiente, o A2C é aproximadamente 3&times; mais rápido (21.787 SPS vs 7.184 SPS), concluindo 1M passos em 49 s contra 143 s. O gráfico de <code>num_updates</code> elucida a causa: o A2C executa estritamente 1 passo de gradiente por rollout (totalizando 25.000 atualizações), enquanto o PPO realiza 320 atualizações por rollout (10 épocas &times; 32 minibatches), acumulando <strong>156.160 atualizações</strong>. Contudo, ao analisar a curva de retorno por tempo de relógio (Fig. 4), o PPO resolve o LunarLander em <strong>apenas 30 segundos</strong> de execução &mdash; muito antes de o A2C terminar seus 49 segundos sem convergir. Logo, mesmo no eixo cronológico absoluto, o PPO é superior.
+    </p>
+    <p class="analysis-p">
+      <strong>3. Orçamento Fixo de Passos vs. Tempo:</strong> Sob orçamento fixo de passos (1M), a vantagem do PPO é absoluta (259 vs 82/&minus;112). Sob orçamento fixo de tempo (ex: 60 s), o PPO igualmente vence, pois estabiliza em >200 na metade desse tempo. Se o ambiente possuísse física complexa de simulação (onde coletar passos é o gargalo dominante de tempo), a vantagem computacional do PPO cresceria ainda mais, já que o custo de reuso da rede neural torna-se desprezível perante a simulação.
+    </p>
+    <p class="analysis-p">
+      <strong>4. Estabilidade Estocástica Inter-Seed:</strong> As duas seeds do PPO convergem para retornos quase idênticos (259 e 246, variação de apenas 13 pontos), exibindo recuperação imediata de pequenas oscilações. Já o A2C apresenta dispersão catastrófica de <strong>194 pontos</strong> entre seeds (82 vs &minus;112): na seed 2, o A2C sobe até +90 aos 250k passos e depois sofre colapso irreversível para &minus;116, incapaz de restabelecer o equilíbrio.
+    </p>
+    <p class="analysis-p">
+      <strong>5. Mecanismo Físico das Quatro Inovações do PPO:</strong> As diferenças observadas decorrem diretamente das quatro alterações algorítmicas:
+      (i) <strong>Reuso de Amostras:</strong> Permite extrair 6,2&times; mais passos de gradiente do mesmo lote de dados, sendo o motor primordial da eficiência amostral;
+      (ii) <strong>Razão de Probabilidades &amp; (iii) Clipping Pessimista:</strong> Atuam como freio trust-region imprescindível. O <code>clipfrac</code> ativo em 7,0% das transições impede passos desmedidos decorrentes das 10 épocas de otimização, eliminando as quedas catastróficas que destroem o A2C;
+      (iv) <strong>GAE (&lambda; = 0,95):</strong> Fornece vantagens com variância reduzida e viés controlado, alavancando a <code>explained_variance</code> do crítico para >90% e gerando o sinal estável necessário para sustentar múltiplas épocas de aprendizado.
+    </p>
+  </div>
+
+  <div class="page-footer">
+    <span>Cleiver Batista da Silva Junior &bull; Relatório Experimental PPO</span>
+    <span>Página 3 de 3</span>
+  </div>
+</div>
+
+</body>
+</html>

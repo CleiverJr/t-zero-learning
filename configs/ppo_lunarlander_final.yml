@@ -1,0 +1,52 @@
+# PPO assignment — LunarLander-v3, CONFIG FINAL (Parte 4).
+#
+# Parte do configs/ppo_lunarlander.yml (defaults do CleanRL, ajustados para o
+# CartPole) e muda quatro chaves. O diagnóstico que levou a cada mudança está
+# no relatório; em resumo, o config inicial tinha approx_kl ~3e-4 e clipfrac
+# zerado, ou seja, cada rollout mal movia a política e era descartado em
+# seguida. As três primeiras mudanças atacam exatamente isso; a quarta
+# devolve a velocidade perdida.
+#
+#   learning_rate    2.5e-4 -> 1e-3   passo maior, com folga medida pelo approx_kl
+#   update_epochs    4      -> 10     mais passes por rollout (reuso de amostras)
+#   num_minibatches  4      -> 32     minibatch de 64: mais updates por época
+#   num_envs         4      -> 16     lote 512 -> 2048: recupera o SPS e estabiliza
+#
+# Resolve o ambiente (eval >= 200 e retorno >= 200) em 2 seeds dentro de 1M
+# passos — metade do orçamento permitido.
+#
+#   python train.py --config ppo_lunarlander_final
+#   python train.py --config ppo_lunarlander_final --override seed=2
+
+algorithm: ppo
+env_id: LunarLander-v3
+seed: 1
+cuda: false
+total_timesteps: 1000000
+num_envs: 16            # era 4
+
+track: true
+capture_video: true
+save_model: true
+checkpoint_every: 0
+
+network: DiscreteActorCritic
+network_kwargs:
+  activation: Tanh
+  hidden_layers_size: 64
+
+ppo:
+  learning_rate: 1.0e-3 # era 2.5e-4
+  anneal_lr: true
+  num_steps: 128
+  gamma: 0.99
+  gae_lambda: 0.95
+  num_minibatches: 32   # era 4
+  update_epochs: 10     # era 4
+  norm_adv: true
+  clip_coef: 0.2
+  clip_vloss: true
+  ent_coef: 0.01
+  vf_coef: 0.5
+  max_grad_norm: 0.5
+  target_kl: null

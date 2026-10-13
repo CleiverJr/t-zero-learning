@@ -145,7 +145,23 @@ def compute_gae(
         advantages + values`` (the critic's regression target).
     """
     # ===================== YOUR CODE HERE (Part 1) =====================
-    raise NotImplementedError("Implement compute_gae")
+    num_steps = rewards.shape[0]
+    advantages = torch.zeros_like(rewards)
+    lastgaelam = torch.zeros_like(next_value)
+    for t in reversed(range(num_steps)):
+        # what comes *after* step t: for the last step it is the state the
+        # rollout ended in; otherwise it is step t+1, whose done flag (CleanRL
+        # convention) says whether an episode ended between t and t+1
+        if t == num_steps - 1:
+            nextnonterminal = 1.0 - next_done
+            nextvalues = next_value
+        else:
+            nextnonterminal = 1.0 - dones[t + 1]
+            nextvalues = values[t + 1]
+        delta = rewards[t] + gamma * nextvalues * nextnonterminal - values[t]
+        lastgaelam = delta + gamma * gae_lambda * nextnonterminal * lastgaelam
+        advantages[t] = lastgaelam
+    return advantages, advantages + values
     # ===================================================================
 
 
@@ -162,7 +178,14 @@ def compute_clipped_policy_loss(
     objective.
     """
     # ===================== YOUR CODE HERE (Part 2) =====================
-    raise NotImplementedError("Implement compute_clipped_policy_loss")
+    # the data-collecting policy and the advantages are constants here: the
+    # gradient must reach the new policy only
+    ratio = (newlogprob - oldlogprob.detach()).exp()
+    advantages = advantages.detach()
+    pg_loss_unclipped = -advantages * ratio
+    pg_loss_clipped = -advantages * torch.clamp(ratio, 1 - clip_coef, 1 + clip_coef)
+    # max of the negated terms == min of the objective (the pessimistic bound)
+    return torch.max(pg_loss_unclipped, pg_loss_clipped).mean()
     # ===================================================================
 
 
@@ -177,7 +200,13 @@ def approx_kl_and_clipfrac(
     ``clipfrac`` is the fraction of samples with ``|ratio - 1| > clip_coef``.
     """
     # ===================== YOUR CODE HERE (Part 3) =====================
-    raise NotImplementedError("Implement approx_kl_and_clipfrac")
+    with torch.no_grad():  # pure diagnostics: never part of the update
+        logratio = newlogprob - oldlogprob
+        ratio = logratio.exp()
+        # k3 estimator: unbiased and always >= 0, unlike the plain -log(ratio)
+        approx_kl = ((ratio - 1.0) - logratio).mean()
+        clipfrac = ((ratio - 1.0).abs() > clip_coef).float().mean()
+    return approx_kl, clipfrac
     # ===================================================================
 
 
