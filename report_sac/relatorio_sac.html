@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Atividade 08 — Soft Actor-Critic (SAC)</title>
+<style>
+  @page {
+    size: A4 portrait;
+    margin: 6mm 9mm 6.5mm 9mm;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 7.6pt;
+    line-height: 1.26;
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    background: #fff;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Page Wrapper */
+  .page {
+    width: 100%;
+    height: 282mm;
+    max-height: 282mm;
+    overflow: hidden;
+    page-break-after: always;
+    break-after: page;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+  .page:last-child {
+    page-break-after: avoid;
+    break-after: avoid;
+  }
+
+  /* Header & Metadata */
+  .doc-header {
+    border-bottom: 2px solid #0f172a;
+    padding-bottom: 3px;
+    margin-bottom: 4px;
+  }
+  .doc-badge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5px;
+  }
+  .doc-category {
+    font-size: 6.6pt;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: #4338ca;
+  }
+  .doc-status {
+    font-size: 6.6pt;
+    font-weight: 700;
+    color: #047857;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    padding: 0.5px 5px;
+    border-radius: 8px;
+  }
+  h1 {
+    font-size: 12.2pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 2px 0;
+    line-height: 1.15;
+    letter-spacing: -0.2px;
+  }
+  .meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 7.1pt;
+    color: #475569;
+  }
+  .meta-author {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  .meta-bar a {
+    color: #2563eb;
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  /* Setup Box */
+  .setup-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 6px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    padding: 3.5px 6px;
+    margin-bottom: 4px;
+  }
+  .setup-col h3 {
+    margin: 0 0 1.5px 0;
+    font-size: 6.9pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #334155;
+  }
+  .setup-col p {
+    margin: 0;
+    font-size: 7.05pt;
+    line-height: 1.23;
+    text-align: justify;
+    color: #334155;
+  }
+
+  /* Section Styles */
+  h2 {
+    font-size: 8.8pt;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 2.5px 0 1.5px 0;
+    padding-bottom: 1.2px;
+    border-bottom: 1.5px solid #cbd5e1;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  h2 .param-tag {
+    font-size: 6.8pt;
+    font-weight: 600;
+    color: #475569;
+    font-family: ui-monospace, Menlo, monospace;
+    white-space: nowrap;
+  }
+
+  /* Card / Callout */
+  .info-card {
+    background: #f0fdf4;
+    border-left: 2.5px solid #16a34a;
+    border-radius: 0 3px 3px 0;
+    padding: 2.5px 6px;
+    margin: 2px 0 2.5px 0;
+  }
+  .info-card.warn {
+    background: #fef2f2;
+    border-left-color: #dc2626;
+  }
+  .info-card .card-title {
+    font-size: 6.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: #15803d;
+    display: block;
+    margin-bottom: 0.5px;
+  }
+  .info-card.warn .card-title {
+    color: #b91c1c;
+  }
+  .info-card p {
+    margin: 0;
+    font-size: 7.1pt;
+    line-height: 1.22;
+    color: #14532d;
+    text-align: justify;
+  }
+  .info-card.warn p {
+    color: #7f1d1d;
+  }
+
+  /* Figures */
+  figure {
+    margin: 1.5px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #fff;
+    padding: 1px;
+  }
+  figure img {
+    width: 100%;
+    display: block;
+  }
+  figure.compact-fig {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  figure.compact-fig img {
+    width: 58%;
+    max-height: 38mm;
+    object-fit: contain;
+  }
+  figcaption {
+    font-size: 6.4pt;
+    color: #64748b;
+    padding: 1.2px 4px;
+    line-height: 1.15;
+    background: #f8fafc;
+    border-top: 1px solid #f1f5f9;
+    width: 100%;
+  }
+  figcaption strong { color: #334155; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 6.6pt;
+    margin: 1.5px 0 2px 0;
+    font-variant-numeric: tabular-nums;
+  }
+  th {
+    background: #f1f5f9;
+    color: #334155;
+    font-weight: 700;
+    padding: 2px 3.5px;
+    border: 1px solid #cbd5e1;
+    text-align: right;
+    font-size: 6.5pt;
+    letter-spacing: 0.15px;
+  }
+  th:first-child { text-align: left; }
+  td {
+    padding: 1.8px 3.5px;
+    border: 1px solid #e2e8f0;
+    text-align: right;
+    white-space: nowrap;
+    color: #1e293b;
+  }
+  td:first-child { text-align: left; font-weight: 600; }
+  tr:nth-child(even) { background: #f8fafc; }
+  table.changes-table td, table.changes-table th {
+    white-space: normal;
+    line-height: 1.20;
+  }
+  table.changes-table td:nth-child(2), table.changes-table th:nth-child(2) {
+    text-align: left;
+  }
+  table.changes-table th:nth-child(5), table.changes-table td:nth-child(5) {
+    text-align: left;
+  }
+  .tag-best {
+    color: #047857;
+    font-weight: 700;
+    background: #d1fae5;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-worst {
+    color: #b91c1c;
+    font-weight: 700;
+    background: #fee2e2;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  .tag-base {
+    color: #1d4ed8;
+    font-weight: 700;
+    background: #dbeafe;
+    padding: 0.5px 3px;
+    border-radius: 2px;
+  }
+  td.mono-ids {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.0pt;
+    color: #64748b;
+  }
+
+  /* Discussion Text */
+  .analysis-p {
+    font-size: 7.5pt;
+    line-height: 1.25;
+    text-align: justify;
+    margin: 0 0 2.2px 0;
+    color: #1e293b;
+    hyphens: auto;
+  }
+  .analysis-p strong { color: #0f172a; }
+  code {
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: 6.9pt;
+    background: #f1f5f9;
+    padding: 0 2px;
+    border-radius: 2px;
+    color: #0f172a;
+  }
+  i { font-family: "Times New Roman", Times, serif; font-style: italic; }
+
+  /* Footer */
+  .page-footer {
+    margin-top: auto;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 6.4pt;
+    color: #94a3b8;
+  }
+  h3.sub { font-size: 7.9pt; font-weight: 800; color: #334155; margin: 3px 0 1px 0; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 1: Cabeçalho, Implementação, Protocolo e Parte 3                 -->
+<!-- ======================================================================= -->
+<div class="page">
+  <div class="doc-header">
+    <div class="doc-badge-row">
+      <span class="doc-category">Reinforcement Learning &middot; Atividade Experimental 08</span>
+      <span class="doc-status">&#10003; 16/16 Testes Unit&aacute;rios &middot; Pendulum-v1 Eval = &minus;142,1 (&gt; &minus;200)</span>
+    </div>
+    <h1>Atividade 08: Soft Actor-Critic (SAC) no Hopper-v5</h1>
+    <div class="meta-bar">
+      <span class="meta-author">Cleiver Batista da Silva Junior &amp; Bianca Visco (dupla)</span>
+      <span>&bull;</span>
+      <span>Fork Oficial: <a href="https://github.com/CleiverJr/t-zero-learning">github.com/CleiverJr/t-zero-learning</a> (<code>algorithms/sac.py</code>)</span>
+      <span>&bull;</span>
+      <span>Logs W&amp;B: <a href="https://wandb.ai/jr-cleiver-federal-university-of-goi-s/sac-assignment">projeto sac-assignment</a></span>
+      <span>&bull;</span>
+      <span>Ambiente: Hopper-v5 (Or&ccedil;amento: 100.000 passos)</span>
+    </div>
+  </div>
+
+  <div class="setup-grid">
+    <div class="setup-col">
+      <h3>Implementa&ccedil;&atilde;o e Arquitetura Te&oacute;rica (Partes 1 e 2)</h3>
+      <p>
+        <strong>1. Pol&iacute;tica Estoc&aacute;stica com Reparametriza&ccedil;&atilde;o (<code>sac.py:147</code>):</strong> A amostragem de a&ccedil;&otilde;es cont&iacute;nuas emprega o truque de reparametriza&ccedil;&atilde;o <i>u</i> = &mu; + &sigma;&middot;&epsilon; com &epsilon; ~ <i>N</i>(0, <i>I</i>) via <code>Normal(mu, sigma).rsample()</code>, assegurando que o gradiente da perda do ator retropropague analiticamente atrav&eacute;s da a&ccedil;&atilde;o. A proje&ccedil;&atilde;o n&atilde;o-linear <i>a</i> = tanh(<i>u</i>)&middot;scale + bias mapeia para o suporte v&aacute;lido de atuadores, com corre&ccedil;&atilde;o jacobiana log &pi;(<i>a</i>|<i>s</i>) = log <i>p</i>(<i>u</i>) &minus; &sum; log(scale&middot;(1 &minus; tanh&sup2;<i>u</i>) + 10<sup>&minus;6</sup>) acumulada sobre as 3 dimens&otilde;es do Hopper.<br>
+        <strong>2. Alvo de Bellman Regularizado por Entropia (<code>sac.py:182</code>):</strong> <i>y</i> = <i>r</i> + &gamma;(1 &minus; <i>d</i>)(min(<i>Q</i>&prime;<sub>1</sub>, <i>Q</i>&prime;<sub>2</sub>) &minus; &alpha; log &pi;(<i>a</i>&prime;|<i>s</i>&prime;)). A su&iacute;te de 16 testes unit&aacute;rios obteve 100% de aprova&ccedil;&atilde;o e a checagem no <code>Pendulum-v1</code> convergiu com eval de <b>&minus;142,1</b> (crit&eacute;rio &gt; &minus;200).
+      </p>
+    </div>
+    <div class="setup-col">
+      <h3>Protocolo Experimental &amp; Corre&ccedil;&atilde;o no Harness</h3>
+      <p>
+        <strong>Ambiente &amp; Or&ccedil;amento:</strong> <code>Hopper-v5</code> sob or&ccedil;amento estrito de <strong>100.000 passos de ambiente</strong>, avaliado com 3 seeds independentes na Parte 3 e 2 seeds nas Partes 4 e 5. Todos os retornos reportados expressam m&eacute;dia amostral e intervalo (m&iacute;n&ndash;m&aacute;x). As hip&oacute;teses das Partes 4 e 5 foram formalmente pr&eacute;-registradas antes das execu&ccedil;&otilde;es (<code>report_sac/previsoes.md</code>).<br>
+        <strong>Corre&ccedil;&atilde;o no Harness:</strong> Identificou-se e corrigiu-se uma inconsist&ecirc;ncia sint&aacute;tica no script de registro de logs <code>train.py</code> original (refer&ecirc;ncia a <code>args.algo.learning_rate</code>, par&acirc;metro desacoplado no SAC em <code>q_lr</code> e <code>policy_lr</code>), sem qualquer modifica&ccedil;&atilde;o na l&oacute;gica algor&iacute;tmica.
+      </p>
+    </div>
+  </div>
+
+  <h2>Parte 3 &mdash; Efici&ecirc;ncia Amostral e Otimiza&ccedil;&atilde;o Hiperparam&eacute;trica no Hopper-v5 <span class="param-tag">total_timesteps = 100.000</span></h2>
+  <p class="analysis-p"><strong>Diagn&oacute;stico da Configura&ccedil;&atilde;o Inicial.</strong> A an&aacute;lise das tr&ecirc;s sementes da configura&ccedil;&atilde;o baseline (<code>5qgrxbh1</code>, <code>y2sbgc0j</code>, <code>7wucorzt</code>) confirma a opera&ccedil;&atilde;o est&aacute;vel do mecanismo de autotune: a entropia convergiu para &minus;3,01 (alvo de refer&ecirc;ncia: &minus;3,0) e a temperatura estabilizou em &alpha; &sim; 0,08. Contudo, a curva de aprendizado mant&eacute;m inclina&ccedil;&atilde;o positiva acentuada exatamente ao termo dos 100 mil passos (Figura 1), indicando interrup&ccedil;&atilde;o prematura por restri&ccedil;&atilde;o de dados, e n&atilde;o satura&ccedil;&atilde;o de capacidade. Como o or&ccedil;amento &eacute; fixado em intera&ccedil;&otilde;es com o ambiente, a interven&ccedil;&atilde;o anal&iacute;tica mandat&oacute;ria consiste em extrair maior sinal de aprendizado por transi&ccedil;&atilde;o coletada, visto que no baseline realizaram-se apenas ~95 mil passos de gradiente (raz&atilde;o 1:1). Detectou-se tamb&eacute;m instabilidade estoc&aacute;stica: na seed 1 (<code>5qgrxbh1</code>), o retorno sofre retra&ccedil;&atilde;o de 764 para 6 entre 69k e 73k passos, s&iacute;ncrona com uma oscila&ccedil;&atilde;o no res&iacute;duo <code>charts/q_minus_return</code> (+260 a +297).</p>
+
+  <table class="changes-table">
+    <thead>
+      <tr><th>Interven&ccedil;&atilde;o Param&eacute;trica (Chave: Antes &rarr; Depois)</th><th>Motiva&ccedil;&atilde;o Te&oacute;rica / Diagn&oacute;stico Observado</th><th>eval/mean_return<br>m&eacute;dia (m&iacute;n&ndash;m&aacute;x)</th><th>r_last100 no fim<br>m&eacute;dia (m&iacute;n&ndash;m&aacute;x)</th><th>Veredito Experimental</th><th>Runs (s1, s2, s3)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><span class="tag-base">Configura&ccedil;&atilde;o Inicial</span></td><td>Linha de base (baseline de refer&ecirc;ncia)</td><td>2 157 (984&ndash;2 935)</td><td>951 (542&ndash;1 195)</td><td>Refer&ecirc;ncia emp&iacute;rica</td><td class="mono-ids">5qgrxbh1, y2sbgc0j, 7wucorzt</td></tr>
+      <tr><td><code>sac.learning_starts</code> 5 000 &rarr; 1 000</td><td>Redu&ccedil;&atilde;o da fase inicial aleat&oacute;ria (5% do or&ccedil;amento consumido em quedas de ~20 passos); &alpha; decai rapidamente de 1,0 para ~0,1 logo ap&oacute;s o in&iacute;cio</td><td>1 208 (978&ndash;1 665)</td><td>1 128 (966&ndash;1 427)</td><td>Indistingu&iacute;vel estatisticamente; eleva&ccedil;&atilde;o de r_last100 decorre do menor amortecedor inicial</td><td class="mono-ids">ydyu7r6a, mk8d2dtr, 28lmc8iz</td></tr>
+      <tr><td><code>sac.updates_per_step</code> 1 &rarr; 2</td><td>Hip&oacute;tese de subtreinamento: dobrar a frequ&ecirc;ncia de otimizador por transi&ccedil;&atilde;o armazenada</td><td>910 (15&ndash;2 411)</td><td>947 (437&ndash;1 353)</td><td><span class="tag-worst">Degrada&ccedil;&atilde;o e colapso</span> (seed 2 atinge eval de apenas 15)</td><td class="mono-ids">zia30sj6, hjqaxfip, 2a5f7q7q</td></tr>
+      <tr><td><code>sac.updates_per_step</code> 1 &rarr; 4</td><td>Explora&ccedil;&atilde;o agressiva de reuso: 4 passos de gradiente por transi&ccedil;&atilde;o coletada</td><td>2 158 (1 521&ndash;2 962)</td><td><b>1 288 (1 109&ndash;1 435)</b></td><td><span class="tag-best">Ganho consistente em treino</span>; piso de eval elevado de 984 para 1 521</td><td class="mono-ids">46kduzai, 87zhex0k, mdlsrrql</td></tr>
+    </tbody>
+  </table>
+
+  <figure class="compact-fig">
+    <img src="figs/p3_inicial_vs_final.png" alt="Parte 3: curvas de retorno da configuração inicial vs final">
+    <figcaption><strong>Figura 1:</strong> Din&acirc;mica de aprendizado no Hopper-v5 (retorno m&eacute;dio dos &uacute;ltimos 100 epis&oacute;dios, m&eacute;dia de 3 seeds com envelope m&iacute;n&ndash;m&aacute;x) comparando a configura&ccedil;&atilde;o inicial com a final otimizada (<code>updates_per_step=4</code>). A inflex&atilde;o negativa aos ~71k passos reflete a instabilidade transit&oacute;ria observada na seed 1 (<code>5qgrxbh1</code>).</figcaption>
+  </figure>
+
+  <p class="analysis-p"><strong>Sele&ccedil;&atilde;o da Configura&ccedil;&atilde;o Final.</strong> Exclusivamente a parametriza&ccedil;&atilde;o com <code>updates_per_step = 4</code> superou a vari&acirc;ncia estoc&aacute;stica do baseline no retorno de treino: o indicador <code>r_last100</code> evolui de 951 para <strong>1 288</strong> (+35,4%), com intervalos que se sobrep&otilde;em apenas em estreita margem (1 109&ndash;1 435 vs. 542&ndash;1 195). Na avalia&ccedil;&atilde;o determin&iacute;stica (eval), as m&eacute;dias globais equivalem-se (2 158 vs. 2 157), por&eacute;m com not&aacute;vel eleva&ccedil;&atilde;o do piso de pior caso (1 521 contra 984). O comportamento an&ocirc;malo registrado em <code>updates_per_step = 2</code> (onde o colapso do seed 2 rebaixou a m&eacute;dia para 910) atesta a n&atilde;o-monotonicidade t&iacute;pica de m&eacute;todos de alta vari&acirc;ncia sob or&ccedil;amentos curtos. Adota-se <b>updates_per_step = 4</b> como configura&ccedil;&atilde;o final recomendada (<code>configs/sac_hopper_final.yml</code>), registrando-se o trade-off computacional: a quadruplica&ccedil;&atilde;o dos passos de gradiente expande o tempo de treino em m&aacute;quina isolada de ~5 para ~18 minutos.</p>
+
+  <div class="page-footer"><span>Cleiver Batista da Silva Junior &amp; Bianca Visco &bull; Relat&oacute;rio Experimental SAC</span><span>P&aacute;gina 1 de 3</span></div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 2: Parte 4                                                       -->
+<!-- ======================================================================= -->
+<div class="page">
+  <h2>Parte 4 &mdash; Estudo de Abla&ccedil;&atilde;o Mecan&iacute;stica dos Componentes Cr&iacute;ticos <span class="param-tag">Configura&ccedil;&atilde;o Final (updates_per_step=4) &middot; 2 seeds cada</span></h2>
+
+  <h3 class="sub">Abla&ccedil;&atilde;o 1 &mdash; Supress&atilde;o da Regula&ccedil;&atilde;o Autom&aacute;tica de Temperatura: <code>sac.autotune=false</code>, <code>sac.alpha=0.08</code></h3>
+  <div class="info-card">
+    <span class="card-title">Hip&oacute;tese Te&oacute;rica (A Priori, pr&eacute;-registrada em <code>previsoes.md</code>)</span>
+    <p>A fixa&ccedil;&atilde;o em &alpha; = 0,08 fundamentou-se no patamar de equil&iacute;brio alcan&ccedil;ado pelo autotune no encerramento de todas as execu&ccedil;&otilde;es da Parte 3 (0,075&ndash;0,086). Formulou-se a hip&oacute;tese de que o desempenho final convergiria para valores similares &agrave; linha de base, por&eacute;m com din&acirc;mica inicial degradada: a aus&ecirc;ncia da fase transit&oacute;ria de alta temperatura (&alpha; &sim; 0,7) privaria o agente de explora&ccedil;&atilde;o abrangente prematura, acarretando queda r&aacute;pida da entropia para n&iacute;veis inferiores ao alvo (&minus;3,0).</p>
+  </div>
+  <figure>
+    <img src="figs/p4_alpha_fixo.png" alt="Ablação 1: trajetória de alpha, entropia e retorno de treino">
+    <figcaption><strong>Figura 2:</strong> Confronto da abla&ccedil;&atilde;o de autotune: evolu&ccedil;&atilde;o da temperatura &alpha;, entropia da pol&iacute;tica contra o alvo te&oacute;rico (linha pontilhada: <code>charts/target_entropy = &minus;3.0</code>) e retorno de treino (configura&ccedil;&atilde;o final adaptativa vs. &alpha; fixo em 0,08; runs <code>qw5y3gju</code> e <code>4l0tnj8k</code>).</figcaption>
+  </figure>
+  <p class="analysis-p"><strong>An&aacute;lise Emp&iacute;rica e Valida&ccedil;&atilde;o Mecan&iacute;stica.</strong> A hip&oacute;tese inicial corroborou-se com precis&atilde;o quanto &agrave; din&acirc;mica de dispers&atilde;o: com &alpha; fixo, a entropia sofre retra&ccedil;&atilde;o precoce at&eacute; atingir <strong>&minus;6,5</strong> por volta de 12k passos e oscila erraticamente entre &minus;5 e &minus;2, retornando ao alvo de refer&ecirc;ncia somente pr&oacute;ximo a 80k passos &mdash; ao passo que sob autotune o algoritmo mant&eacute;m a entropia estritamente ancorada em &minus;3,0 ao longo de todo o experimento. No retorno m&eacute;dio de treino, a equival&ecirc;ncia foi confirmada (<code>r_last100</code> de 1 254 (1 210&ndash;1 299) vs. 1 288 (1 109&ndash;1 435)). Constatou-se, por&eacute;m, um fen&ocirc;meno contra-intuitivo n&atilde;o antecipado na hip&oacute;tese: a avalia&ccedil;&atilde;o determin&iacute;stica por a&ccedil;&atilde;o m&eacute;dia atingiu <strong>3 079 (2 985&ndash;3 173)</strong>, mas o retorno amostrado estoc&aacute;stico no seed 1 limitou-se a 1 175. Esse contraste demonstra que a pol&iacute;tica encontrou uma trajet&oacute;ria m&eacute;dia favor&aacute;vel, por&eacute;m com perfil de vari&acirc;ncia desregulado pela supress&atilde;o da homeostase entr&oacute;pica.<br>
+  <strong>Mapeamento no C&oacute;digo:</strong> Sob <code>autotune=false</code>, a temperatura &eacute; congelada em <code>sac.py:344</code> e o bloco <code>sac.py:492&ndash;500</code> &mdash; respons&aacute;vel pelo c&aacute;lculo e retropropaga&ccedil;&atilde;o de <code>compute_alpha_loss</code> (<code>sac.py:209</code>) &mdash; &eacute; totalmente ignorado. Como esse gradiente constitui o &uacute;nico mecanismo restaurador em rela&ccedil;&atilde;o a <code>target_entropy</code> (&minus;|<i>A</i>| = &minus;3 em <code>sac.py:341</code>), a vari&acirc;ncia da distribui&ccedil;&atilde;o fica desprotegida contra a domin&acirc;ncia do termo de valor (&minus;min(<i>Q</i>)) na perda do ator (<code>sac.py:198</code>), que durante a fase inicial colapsa a dispers&atilde;o gaussiana.</p>
+
+  <h3 class="sub">Abla&ccedil;&atilde;o 2 &mdash; Supress&atilde;o do Duplo Cr&iacute;tico Pessimista: <code>sac.clipped_double_q=false</code></h3>
+  <div class="info-card">
+    <span class="card-title">Hip&oacute;tese Te&oacute;rica (A Priori, pr&eacute;-registrada em <code>previsoes.md</code>)</span>
+    <p>O operador de minimiza&ccedil;&atilde;o min(<i>Q</i><sub>1</sub>, <i>Q</i><sub>2</sub>) atua como barreira fundamental contra a superestima&ccedil;&atilde;o no alvo de Bellman. Postulou-se que sua supress&atilde;o acarretaria eleva&ccedil;&atilde;o expressiva de <code>q_minus_return</code> e crescimento desmedido de <code>qf1_values</code>, conduzindo o ator a explorar m&aacute;ximos fict&iacute;cios de forma an&aacute;loga &agrave; instabilidade cl&aacute;ssica observada no Q-Learning de rede &uacute;nica.</p>
+  </div>
+  <figure>
+    <img src="figs/p4_um_critico.png" alt="Ablação 2: viés q_minus_return, escala de Q e retorno de treino">
+    <figcaption><strong>Figura 3:</strong> Efeito da supress&atilde;o do Clipped Double-Q: res&iacute;duo de vi&eacute;s <code>charts/q_minus_return</code> (linha pontilhada: estimativa ideal <i>Q</i> = Retorno), magnitude de <i>Q</i> do primeiro cr&iacute;tico e retorno de treino (configura&ccedil;&atilde;o final vs. cr&iacute;tico &uacute;nico; runs <code>p2ejnwyv</code> e <code>s867tb2u</code>).</figcaption>
+  </figure>
+  <p class="analysis-p"><strong>An&aacute;lise Emp&iacute;rica e Valida&ccedil;&atilde;o Mecan&iacute;stica.</strong> A hip&oacute;tese foi confirmada com severidade desproporcional: a superestima&ccedil;&atilde;o n&atilde;o foi branda, mas catastr&oacute;fica. O valor de <i>Q</i> estimado atingiu <strong>~17 500</strong> no seed 1 aos 40k passos (em contraste com ~230 no baseline est&aacute;vel), o erro <code>q_minus_return</code> ultrapassou <strong>+20 000</strong> (m&eacute;dia final de +6 800) e o retorno colapsou em patamares residuais (<code>r_last100</code> de 339 (331&ndash;347) e eval de 483 (214&ndash;752)). Revelou-se, al&eacute;m disso, um efeito conexo surpreendente: a temperatura <strong>&alpha; escalou para 3,86</strong> &mdash; magnitude 45 vezes superior &agrave; configura&ccedil;&atilde;o final.<br>
+  <strong>Mapeamento no C&oacute;digo e Ciclo de Realimenta&ccedil;&atilde;o:</strong> A altera&ccedil;&atilde;o comuta a fun&ccedil;&atilde;o <code>pick_q2</code> em <code>sac.py:370</code> para retornar diretamente <i>Q</i><sub>1</sub>, for&ccedil;ando o alvo de Bellman em <code>sac.py:457</code> a efetuar bootstrap recursivo sobre a pr&oacute;pria rede <i>Q</i>&prime;<sub>1</sub>, enquanto a perda do ator em <code>sac.py:486</code> (via <code>sac.py:198</code>) maximiza <i>Q</i><sub>1</sub> unilateralmente. O ator busca sistematicamente os m&aacute;ximos locais em que <i>Q</i><sub>1</sub> errou para cima, consolidando o erro no alvo subsequente; com 4 atualiza&ccedil;&otilde;es por passo, essa realimenta&ccedil;&atilde;o positiva diverge em velocidade quadruplicada. A explos&atilde;o de &alpha; decorre diretamente da fun&ccedil;&atilde;o <code>compute_alpha_loss</code> (<code>sac.py:209</code>): com <i>Q</i> na ordem de dezenas de milhares, o gradiente do ator esmaga a distribui&ccedil;&atilde;o rumo a a&ccedil;&otilde;es hiper-concentradas; o autotune responde elevando &alpha; at&eacute; contrabalan&ccedil;ar a escala de <i>Q</i>. A entropia termina formalmente em &minus;2,98 (pr&oacute;xima ao alvo), mas apenas &agrave;s custas de uma temperatura 45&times; inflada &mdash; mascarando o colapso algor&iacute;tmico subjacente.</p>
+
+  <div class="page-footer"><span>Cleiver Batista da Silva Junior &amp; Bianca Visco &bull; Relat&oacute;rio Experimental SAC</span><span>P&aacute;gina 2 de 3</span></div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- PÁGINA 3: Parte 5                                                       -->
+<!-- ======================================================================= -->
+<div class="page">
+  <h2>Parte 5 &mdash; Avalia&ccedil;&atilde;o Comparativa: Soft Actor-Critic (SAC) vs. PPO Cont&iacute;nuo no Hopper-v5 <span class="param-tag">100.000 passos &middot; 2 seeds cada</span></h2>
+  <div class="info-card">
+    <span class="card-title">Hip&oacute;tese Te&oacute;rica (A Priori, pr&eacute;-registrada em <code>previsoes.md</code>)</span>
+    <p>Postulou-se ampla superioridade do SAC em efici&ecirc;ncia amostral por intera&ccedil;&atilde;o de ambiente, em virtude da capacidade de reutilizar dados via buffer de replay em m&uacute;ltiplos passos de gradiente. Em contrapartida, projetava-se que o PPO apresentaria expressiva vantagem em taxa de throughput (SPS), mas estimava-se que a efici&ecirc;ncia amostral do SAC compensaria essa diferen&ccedil;a em tempo real de rel&oacute;gio. Reuso te&oacute;rico estimado: SAC &sim; 243 &times; <code>updates_per_step</code> vezes por transi&ccedil;&atilde;o; PPO &sim; 10 vezes.</p>
+  </div>
+  <figure>
+    <img src="figs/p5_sac_vs_ppo.png" alt="Parte 5: curvas por passos de ambiente, tempo de relógio e passos de gradiente">
+    <figcaption><strong>Figura 4:</strong> Confronto estrutural entre SAC e PPO cont&iacute;nuo no Hopper-v5: aprendizado por passos de ambiente (esquerda), retorno em fun&ccedil;&atilde;o do tempo de rel&oacute;gio (centro; run do SAC <code>c33cox8u</code> executado em isolamento estrito de hardware) e passos de gradiente acumulados (direita; escala logar&iacute;tmica).</figcaption>
+  </figure>
+  <table>
+    <thead>
+      <tr><th>Algoritmo / Configura&ccedil;&atilde;o</th><th>Eval Determin&iacute;stico (s1 / s2)</th><th>r_last100 Final (s1 / s2)</th><th>Passos at&eacute; R=300</th><th>Passos at&eacute; R=500</th><th>Passos at&eacute; R=1.000</th><th>Passos de Gradiente</th><th>Reuso por Transi&ccedil;&atilde;o</th><th>Tempo Total (100k)</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>SAC Final (<code>updates_per_step=4</code>)</td><td>2 962 / 1 521</td><td>1 321 / 1 435</td><td>37k / 27k</td><td>54k / 37k</td><td>79k / 58k</td><td>379 600</td><td><b>&approx; 970&times;</b></td><td>17,7 min (dedicado)</td></tr>
+      <tr><td>SAC Baseline (<code>updates_per_step=1</code>)</td><td>2 552 / 984</td><td>542 / 1 116</td><td>24k / 33k</td><td>52k / 55k</td><td>N&atilde;o atingiu / 91k</td><td>94 900</td><td>&approx; 243&times;</td><td>~5,0 min</td></tr>
+      <tr><td>PPO Cont&iacute;nuo (Sem ajuste)</td><td>340 / 364</td><td>326 / 356</td><td>90k / 70k</td><td>N&atilde;o atingiu</td><td>N&atilde;o atingiu</td><td>7 680</td><td><b>10&times;</b></td><td><b>19 s</b></td></tr>
+    </tbody>
+  </table>
+
+  <p class="analysis-p"><strong>Efici&ecirc;ncia Amostral por Passos de Ambiente.</strong> A superioridade do SAC confirmou-se de forma categ&oacute;rica: o algoritmo cruza a marca de retorno 300 entre 27k e 37k passos e atinge 1 000 entre 58k e 79k passos de ambiente. O PPO requer de 70k a 90k passos apenas para alcan&ccedil;ar retorno 300, e jamais atinge o limiar de 500 dentro do or&ccedil;amento estipulado. Ao final dos 100 mil passos, o SAC entrega retornos de avalia&ccedil;&atilde;o entre 1 521 e 2 962, superando o PPO (340 a 364) por uma magnitude de 4&times; a 9&times;. <b>Hip&oacute;tese de efici&ecirc;ncia amostral plenamente corroborada.</b></p>
+
+  <p class="analysis-p"><strong>Din&acirc;mica de Tempo de Rel&oacute;gio (Wall-Clock Time).</strong> No eixo temporal, a hip&oacute;tese preliminar mostrou-se incorreta ao subestimar a discrep&acirc;ncia de carga computacional entre os dois paradigmas: o PPO conclui o treinamento de 100 mil passos em meros <strong>19 segundos</strong>, enquanto o SAC final demanda <strong>17,7 minutos</strong> em computa&ccedil;&atilde;o dedicada. No tempo em que o PPO finaliza todo o ciclo, o SAC sequer completou o per&iacute;odo de a&ccedil;&otilde;es aleat&oacute;rias explorat&oacute;rias (~6 700 passos). A causa estrutural reside no volume de otimiza&ccedil;&atilde;o (Figura 4, direita, escala log): o PPO executa apenas <strong>7 680</strong> passos de gradiente (lotes de 128 inst&acirc;ncias), ao passo que o SAC realiza <strong>379 600</strong> atualiza&ccedil;&otilde;es (lotes de 256 inst&acirc;ncias com redes de 256 neur&ocirc;nios contra 64 no PPO) &mdash; uma diferen&ccedil;a de ~50&times; no volume de backward passes. Consequentemente, para or&ccedil;amentos inferiores a 5 minutos, o PPO exibe maior progresso &uacute;til; contudo, o SAC supera a barreira de retorno do PPO aos <strong>5,4 min</strong> (cruzando R=300) e atinge R=1 000 aos <strong>13,7 min</strong> &mdash; patamares inating&iacute;veis para o PPO sob 100k passos. A escolha por <code>updates_per_step=4</code> onera severamente o tempo (~18 vs. ~5 min) para elevar o retorno em ~35%, justificando-se exclusivamente pelo fato de o crit&eacute;rio do trabalho ser medido em passos de ambiente.</p>
+
+  <p class="analysis-p"><strong>Mapeamento Te&oacute;rico dos Quatro Pilares Mecan&iacute;sticos:</strong><br>
+  (1) <b>Replay Buffer Off-Policy:</b> Constitui o alicerce da efici&ecirc;ncia amostral e do custo computacional: cada transi&ccedil;&atilde;o armazenada (<code>sac.py:243</code>) &eacute; reaproveitada uniformemente em m&eacute;dia <strong>~970 vezes</strong> (379 600 &times; 256 &div; 100 000), contra rigorosamente <strong>10 vezes</strong> no PPO (10 &eacute;pocas sobre o rollout, seguido de descarte definitivo).<br>
+  (2) <b>Cr&iacute;tico Duplo Pessimista:</b> O operador min(<i>Q</i><sub>1</sub>, <i>Q</i><sub>2</sub>) viabiliza a seguran&ccedil;a matem&aacute;tica do reuso intensivo; sem ele (como evidenciado na Abla&ccedil;&atilde;o 2), a taxa de reutiliza&ccedil;&atilde;o exponencializa o vi&eacute;s de Bellman e colapsa a pol&iacute;tica.<br>
+  (3) <b>Gradiente Anal&iacute;tico via Reparametriza&ccedil;&atilde;o:</b> A formula&ccedil;&atilde;o com <code>Normal.rsample()</code> e tangente hiperb&oacute;lica (<code>sac.py:147</code>) propaga gradientes determin&iacute;sticos de baixa vari&acirc;ncia atrav&eacute;s da a&ccedil;&atilde;o e do cr&iacute;tico (<code>sac.py:198</code>), superando a vari&acirc;ncia intr&iacute;nseca do estimador de verossimilhan&ccedil;a do PPO sob amostras defasadas.<br>
+  (4) <b>Homeostase Entr&oacute;pica Adaptativa:</b> O autotune preserva a calibragem explorat&oacute;ria ao longo de centenas de atualiza&ccedil;&otilde;es sobre dados hist&oacute;ricos, amortecendo desvios de vari&acirc;ncia que de outra forma paralisariam o aprendizado.<br>
+  <em>Nota de Avalia&ccedil;&atilde;o:</em> O retorno de eval determin&iacute;stico supera expressivamente o <code>r_last100</code> (2 962 vs. 1 321 no seed 1) porque a janela de 100 epis&oacute;dios no Hopper abrange dezenas de milhares de passos com pol&iacute;ticas em est&aacute;gios anteriores, enquanto a avalia&ccedil;&atilde;o afere a pol&iacute;tica instant&acirc;nea sem o ru&iacute;do da explora&ccedil;&atilde;o.</p>
+
+  <div class="page-footer"><span>Cleiver Batista da Silva Junior &amp; Bianca Visco &bull; Relat&oacute;rio Experimental SAC</span><span>P&aacute;gina 3 de 3</span></div>
+</div>
+
+</body>
+</html>

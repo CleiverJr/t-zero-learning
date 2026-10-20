@@ -101,7 +101,9 @@ def main():
     print(f"Experiment name: {args.exp_name}")
     print(f"Env: {args.env_id} kwargs={args.env_kwargs}")
     print(f"Total timesteps: {args.total_timesteps:,}")
-    print(f"Learning rate: {args.algo.learning_rate}")
+    # SAC has no single learning_rate (policy_lr / q_lr): print what exists
+    lr_fields = [f for f in ("learning_rate", "policy_lr", "q_lr") if hasattr(args.algo, f)]
+    print("Learning rate: " + ", ".join(f"{f}={getattr(args.algo, f)}" for f in lr_fields))
     print(f"Number of environments: {args.num_envs}")
     print(f"Seed: {args.seed}")
 

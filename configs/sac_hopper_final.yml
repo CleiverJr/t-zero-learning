@@ -1,0 +1,49 @@
+# SAC assignment — Hopper-v5, CONFIG FINAL (Parte 3).
+#
+# Parte do configs/sac_hopper.yml (defaults do CleanRL) e muda uma chave:
+#
+#   sac.updates_per_step  1 -> 4
+#
+# Motivo observado: nos 3 seeds do config inicial (5qgrxbh1, y2sbgc0j,
+# 7wucorzt) o retorno ainda sobe linearmente aos 100k passos — subtreinado,
+# não convergido. Como o orçamento é de passos de ambiente, não de tempo,
+# mais passos de gradiente por transição é a alavanca direta.
+#
+# Resultado (3 seeds): r_last100 951 (542–1195) -> 1288 (1109–1435);
+# eval/mean_return 2157 (984–2935) -> 2158 (1521–2962). Melhora no retorno
+# de treino, indistinguível no eval, com piso mais alto. Custa ~3x o tempo
+# de relógio (~18 min sozinho na máquina, contra ~5 min).
+#
+#   python train.py --config sac_hopper_final --override seed=2
+
+algorithm: sac
+env_id: Hopper-v5
+seed: 1
+cuda: false
+total_timesteps: 100000
+num_envs: 1
+
+track: true
+capture_video: true
+save_model: true
+checkpoint_every: 25000
+
+network: SACAgent
+network_kwargs:
+  activation: ReLU
+  hidden_layers_size: 256
+
+sac:
+  buffer_size: 1000000
+  gamma: 0.99
+  tau: 0.005
+  batch_size: 256
+  learning_starts: 5000
+  policy_lr: 3.0e-4
+  q_lr: 1.0e-3
+  policy_frequency: 2
+  target_network_frequency: 1
+  alpha: 0.2
+  autotune: true
+  updates_per_step: 4   # era 1
+  clipped_double_q: true
